@@ -8,20 +8,22 @@ CREATE (:Personaje {
 });
 
 //comprobar
-MATCH (p:Personaje) RETURN p.id, p.name;
+MATCH (p:Personaje) 
+RETURN p.id, p.name;
 
-//cargar los aristas
+//cargar los relaciones
 LOAD CSV WITH HEADERS FROM 'file:///got-s2-edges.csv' AS row
 MATCH (source:Personaje {id: row.Source}),
       (target:Personaje {id: row.Target})
 CREATE (source)-[:HABLA_CON {conversaciones: toInteger(row.Weight), season: toInteger(row.Season)}]->(target);
 
 //comprobar
-MATCH (p:Personaje)-[r:HABLA_CON]->(p2:Personaje) RETURN p, r, p2;
+MATCH (p:Personaje)-[r:HABLA_CON]->(p2:Personaje) 
+RETURN p, r, p2;
 
 // PREGUNTAS ANÁLISIS BÁSICO (15 preguntas):
 
-// 1. ¿Cómo es el esquema general del gráfo?
+// 1. ¿Cómo es el esquema general del grafo?
 // 2. ¿Cuáles tipos de nodos existen?
 // 3. ¿Qué atributos tienen los nodos?
 // 4. ¿Cuáles tipos de relaciones existen?
