@@ -49,17 +49,21 @@ RETURN p,r,c;
 // 3. ¿Qué atributos tienen los nodos?
 // 4. ¿Cuáles tipos de relaciones existen?
 // 5. ¿Qué atributos tienen las relaciones?
-// 6. ¿Cuántos Personajes hay?
-// 7. ¿Cuántas relaciones hay?
-// 8. ¿Cuál es el diámetro del grafo?
-// 9. ¿Cuál es la densidad del grafo?
-// 10. ¿Cuál es la ruta más corta entre Jon y Cersei?
-// 11. ¿Cuántas personas han hablado con un determinado personaje?
-// 12. ¿Cuál es el promedio de conversaciones en una persona?
-// 13. ¿Cuál es la distribución de la cantidad de relaciones “HABLA_CON” que hay en el grafo?
-// 14. ¿Con cuántas personas habla 'DAENERYS'?
-// 15. ¿Cuáles son los cinco Personajes que tienen la relación con la mayor cantidad de conversaciones como atributo de HABLA_CON?
-// 16. ¿Cuál es el nodo con mayor número de relaciones?
+// 6. ¿Cuántos Personajes existen?
+// 7. ¿Cuántas Casas existen?
+// 8. ¿Cuántas relaciones "HABLA_CON" existen?
+// 9. ¿Cuántas relaciones "ES_LEAL_A" existen?
+// 10. ¿Quién es el personaje con más la mayor cantidad de conversaciones como atributo de HABLA_CON?
+// 11. ¿Cuál es la casa a la que más gente le es Leal?
+// 12. ¿Cuál es el diámetro del grafo?
+// 13. ¿Cuál es la densidad del grafo?
+// 14. ¿Cuál es la ruta más corta entre Jon y Cersei?
+// 15. ¿Cuántas personas han hablado con un determinado personaje?
+// 16. ¿Cuál es el promedio de conversaciones en una persona?
+// 17. ¿Con cuántas personas habla 'DAENERYS'?
+// 18. ¿Cuál es el nodo con mayor número de relaciones?
+// 19. ¿Cuántos miembros tiene cada casa?
+// 20. ¿Cuántas personas no son leales a una casa en Juego de Tronos?
 
 
 // PREGUNTAS ANÁLISIS CENTRALIDAD (15 preguntas mínimo):
@@ -78,6 +82,11 @@ RETURN p,r,c;
 // 13. Utilizando Articulation Point ¿Cuáles son aquellos personajes cuyo Articulation Point es True?
 // 14. Utilizando Bridge ¿Cuáles son las relaciones frágiles en la red que, si se eliminan, fragmentarían la comunidad? 
 // 15. ¿Cuál es la información de determinado personaje dado su ID?
+// 16. ¿A qué Casa pertenecen los 10 Personajes con mayor Degree?
+// 17. ¿A qué casa pertenecen los 10 personajes con mayor Closeness Centrality?
+// 18. ¿A qué casa pertenecen los 10 personajes con mayor PageRank?
+// 19. ¿Qué personaje es el que tiene un alto Betweenness centrality entre distintas casas?
+// 20. ¿Cuáles son las casas con personaje con menor PageRank?
 
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
@@ -97,6 +106,9 @@ RETURN p,r,c;
 // 13.(LM + BC) ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse?
 // 14.(PR + LM) ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza? (usamos PageRank primero y luego vemos las comunidades de los nodos con los que se relaciona)
 // 15.(LM ++ D) ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
+
+//¿Cuáles son aquellas casas que son más propensas a traicionar a otras casas? ¿De qué casa son las personas a las que les llega comunicación de muchas casas?
+
 
 
 // PREGUNTA EXTRA: ¿Quiénes son los mejores distribuiddores de información por comunidad?
