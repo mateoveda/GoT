@@ -1,6 +1,6 @@
 // Archivo para hacer cosas
 
-//cargar los nodos
+//cargar los Personajes
 LOAD CSV WITH HEADERS FROM 'file:///got-s2-nodes.csv' AS row
 CREATE (:Personaje {
     id: row.Id,
@@ -20,6 +20,27 @@ CREATE (source)-[:HABLA_CON {conversaciones: toInteger(row.Weight), season: toIn
 //comprobar
 MATCH (p:Personaje)-[r:HABLA_CON]->(p2:Personaje) 
 RETURN p, r, p2;
+
+//Cargar las casas:
+LOAD CSV WITH HEADERS FROM 'file:///got-s2-casas.csv' AS row
+CREATE (:Casa {
+    id: toInteger(row.Id),
+    name: row.Label
+});
+
+//comprobar
+MATCH (c:Casa) 
+RETURN c.id, c.name;
+
+//cargar los relaciones
+LOAD CSV WITH HEADERS FROM 'file:///got-s2-Personajes-casa.csv' AS row
+MATCH (source:Personaje {id: row.IdPersonaje}),
+      (target:Casa {name: row.House})
+CREATE (source)-[:ES_LEAL_A]->(target);
+
+//comprobar
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa) 
+RETURN p,r,c;
 
 // PREGUNTAS ANÁLISIS BÁSICO (15 preguntas mínimo):
 
@@ -59,7 +80,23 @@ RETURN p, r, p2;
 // 15. ¿Cuál es la información de determinado personaje dado su ID?
 
 
+// PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
+// 1.TC ¿Cuáles son los personajes que pertenecen a una mayor cantidad de tríadas densamente conectadas, lo que indicaría una relación fuerte entre ellos?
+// 2.TC ¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
+// 3.CCoef ¿Cuáles son los personajes que tienen el mayor coeficiente de agrupamiento?
+// 4.(CCoef + D) ¿Cuáles son los personajes que, a pesar de estar en varias conexiones, tienen un bajo coeficiente de agrupamiento, lo que indicaría que sus conexiones no están interconectadas entre sí?
+// 5.SCC ¿Cuántos componentes fuertemente conectados existen en la red y qué casas o facciones representan? ¿Podrían representar alianzas?
+// 6.WCC ¿Cuántos componentes débilmente conectados existen en la red? ¿Podrían indicar futuras alianzas?
+// 7.LP(label Propagation) Si asumimos que los personajes adoptan la lealtad predominante en su entorno inmediato, ¿qué casas o facciones podrían absorber a personajes inicialmente neutrales? ¿Qué alianzas se forman de manera natural en el grafo sin intervención explícita, según la propagación de etiquetas?
+// 8.LM ¿Cuáles son las comunidades que existen y quienes son los que las componen?
+// 9.(LM + CC) En base a las comunidades detectadas anteriormente ¿Cuáles son los mejores distribuidores de información por comunidad?
+// 10.(LM + MMetric) ¿Existen personajes cuya lealtad no está clara porque están dentro de comunidades con baja modularidad, lo que sugiere conexiones ambiguas?
+// 11.(MMetric) ¿Qué comunidades parecen ser artificialmente sostenidas por un solo personaje y colapsaría si este fuera eliminado? (usamos Modularity Metric)
+// 12.K1C + LM ¿Qué personajes tienen la mayor cantidad de conexiones con múltiples grupos, actuando como posibles mediadores o traidores de cada posible alianza?
+// 13.(LM + BC) ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse?
+// 14.(PR + LM) ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza? (usamos PageRank primero y luego vemos las comunidades de los nodos con los que se relaciona)
+// 15.(LM ++ D) ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
 
 
 // PREGUNTA EXTRA: ¿Quiénes son los mejores distribuiddores de información por comunidad?
