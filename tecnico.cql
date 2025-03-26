@@ -92,25 +92,27 @@ RETURN p,r,c;
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
 // 1.TC ¿Cuáles son los personajes que pertenecen a una mayor cantidad de tríadas densamente conectadas, lo que indicaría una relación fuerte entre ellos?
-// 2.TC ¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
-// 3.CCoef ¿Cuáles son los personajes que tienen el mayor coeficiente de agrupamiento?
-// 4.(CCoef + D) ¿Cuáles son los personajes que, a pesar de estar en varias conexiones, tienen un bajo coeficiente de agrupamiento, lo que indicaría que sus conexiones no están interconectadas entre sí?
-// 5.SCC ¿Cuántos componentes fuertemente conectados existen en la red y qué casas o facciones representan? ¿Podrían representar alianzas?
-// 6.WCC ¿Cuántos componentes débilmente conectados existen en la red? ¿Podrían indicar futuras alianzas?
-// 7.LP(label Propagation) Si asumimos que los personajes adoptan la lealtad predominante en su entorno inmediato, ¿qué casas o facciones podrían absorber a personajes inicialmente neutrales? ¿Qué alianzas se forman de manera natural en el grafo sin intervención explícita, según la propagación de etiquetas?
-// 8.LM ¿Cuáles son las comunidades que existen y quienes son los que las componen?
-// 9.(LM + CC) En base a las comunidades detectadas anteriormente ¿Cuáles son los mejores distribuidores de información por comunidad?
-// 10.(LM + MMetric) ¿Existen personajes cuya lealtad no está clara porque están dentro de comunidades con baja modularidad, lo que sugiere conexiones ambiguas?
-// 11.(MMetric) ¿Qué comunidades parecen ser artificialmente sostenidas por un solo personaje y colapsaría si este fuera eliminado? (usamos Modularity Metric)
-// 12.K1C + LM ¿Qué personajes tienen la mayor cantidad de conexiones con múltiples grupos, actuando como posibles mediadores o traidores de cada posible alianza?
-// 13.(LM + BC) ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse?
-// 14.(PR + LM) ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza? (usamos PageRank primero y luego vemos las comunidades de los nodos con los que se relaciona)
-// 15.(LM ++ D) ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
+// 2.TC ¿Cuáles son las casas más fuertes y más comunicadas?
+// 3.TC ¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
+// 4.CCoef ¿Cuáles son los personajes que tienen el mayor coeficiente de agrupamiento?
+// 5.(CCoef + D) ¿Cuáles son los personajes que, a pesar de estar en varias conexiones, tienen un bajo coeficiente de agrupamiento, lo que indicaría que sus conexiones no están interconectadas entre sí?
+// 6.SCC ¿Cuántos componentes fuertemente conectados existen en la red y qué casas o facciones representan? ¿Podrían representar alianzas?
+// 7.(SCC + Casas) ¿Cuáles casas no apoyan fuertemente ni a los Stark ni a los Lannister?
+// 8.WCC ¿Cuántos componentes débilmente conectados existen en la red? ¿Podrían indicar futuras alianzas?
+// 9.LP(label Propagation) Si asumimos que los personajes adoptan la lealtad predominante en su entorno inmediato, ¿qué casas o facciones podrían absorber a personajes inicialmente neutrales? ¿Qué alianzas se forman de manera natural en el grafo sin intervención explícita, según la propagación de etiquetas?
+// 10.LP(Seed) ¿Cómo quedarían las alianzas si CERSEI predominara sobre sus Conversaciones?
+// 11.LP(Seed) ¿Cómo quedarían las alianzas si ROBB predomina sobre sus conversaciones?
+// 12.LM ¿Cuáles son las comunidades que existen y quienes son los que las componen?
+// 13.(LM + CC) En base a las comunidades detectadas anteriormente ¿Cuáles son los mejores distribuidores de información por comunidad?
+// 14.(LM + MMetric) ¿Existen personajes cuya lealtad no está clara porque están dentro de comunidades con baja modularidad, lo que sugiere conexiones ambiguas?
+// 15.(MMetric) ¿Qué comunidades parecen ser artificialmente sostenidas por un solo personaje y colapsaría si este fuera eliminado? (usamos Modularity Metric)
+// 16.K1C + LM ¿Qué personajes tienen la mayor cantidad de conexiones con múltiples grupos, actuando como posibles mediadores o traidores de cada posible alianza?
+// 17.(LM + BC) ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse? Esta pregunta trata de identificar comunidades que estén conectadas sin triángulos
+// 18.(PR + LM) ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza? (usamos PageRank primero y luego vemos las comunidades de los nodos con los que se relaciona)
+// 19.(LM + D) ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
+// 20.(LM + Casas) ¿Qué grupos de personajes que no tienen casa pueden ser potenciales aliados de otro grupo?
+
 
 //¿Cuáles son aquellas casas que son más propensas a traicionar a otras casas? ¿De qué casa son las personas a las que les llega comunicación de muchas casas?
 
 
-
-// PREGUNTA EXTRA: ¿Quiénes son los mejores distribuiddores de información por comunidad?
-
-// Degree, Closeness, Betweenness, PageRank, Articulation Point, bridges, CELF
