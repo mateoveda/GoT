@@ -45,19 +45,62 @@ RETURN p,r,c;
 // PREGUNTAS ANÁLISIS BÁSICO (15 preguntas mínimo):
 
 // 1. ¿Cómo es el esquema general del grafo?
-// 2. ¿Cuáles tipos de nodos existen?
-// 3. ¿Qué atributos tienen los nodos?
-// 4. ¿Cuáles tipos de relaciones existen?
-// 5. ¿Qué atributos tienen las relaciones?
-// 6. ¿Cuántos Personajes existen?
-// 7. ¿Cuántas Casas existen?
-// 8. ¿Cuántas relaciones "HABLA_CON" existen?
-// 9. ¿Cuántas relaciones "ES_LEAL_A" existen?
-// 10. ¿Quién es el personaje con más la mayor cantidad de conversaciones como atributo de HABLA_CON?
-// 11. ¿Cuál es la casa a la que más gente le es Leal?
-// 12. ¿Cuál es el diámetro del grafo?
-// 13. ¿Cuál es la densidad del grafo?
-// 14. ¿Cuál es la ruta más corta entre Jon y Cersei?
+CALL db.schema.visualization
+
+// 2. ¿Cuáles tipos de nodos existen y que atributos tienen?
+CALL db.schema.nodeTypeProperties
+
+// 3. ¿Cuáles tipos de relaciones existen y que atributos tienen?
+CALL db.schema.relTypeProperties
+
+// 4. ¿Cuántos Personajes existen?
+MATCH (p:Personaje)
+RETURN COUNT(p.id) AS Total_Personajes;
+
+// 5. ¿Cuántas Casas existen?
+MATCH (c:Casa)
+RETURN COUNT(c.id) AS Total_Casas;
+
+// 6. ¿Cuántas relaciones "HABLA_CON" existen?
+MATCH (p)-[r:HABLA_CON]->(k)
+RETURN COUNT(r) AS Total_HABLA_CON;
+
+// 7. ¿Cuántas relaciones "ES_LEAL_A" existen?
+MATCH (p)-[r:ES_LEAL_A]->(k)
+RETURN COUNT(r) AS Total_ES_LEAL_A;
+
+// 8. ¿Cuál es la suma toal de conversaciones?
+MATCH (p)-[r:HABLA_CON]->(k)
+RETURN SUM(r.conversaciones) AS Total_conversaciones;
+
+// 9. ¿Cuál es el promedio de conversaciones?
+MATCH (p)-[r:HABLA_CON]->(k)
+RETURN AVG(r.conversaciones) AS Promedio_Conversaciones;
+
+// 10. ¿Quiénes son los 5 personajes con más la mayor cantidad de conversaciones como atributo de HABLA_CON?
+MATCH (p:Personaje)-[r:HABLA_CON]->(k:Personaje)
+WITH p.id AS ID, COUNT(r) AS Cantidad_conversaciones
+RETURN ID, Cantidad_conversaciones
+ORDER BY Cantidad_conversaciones DESC
+LIMIT 5;
+
+// 11. ¿Cuáles son las casas que más gente leal tiene?
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH c.id AS ID, c.name AS nombre_casa, COUNT(r) AS Cantidad_Leales
+RETURN ID, nombre_casa, Cantidad_Leales
+ORDER BY Cantidad_Leales DESC
+LIMIT 5;
+
+// 12. ¿Cuántas Relaciones hay en Total?
+MATCH (p)-[r]->(k)
+RETURN COUNT(r) AS Total_relaciones;
+
+// 13. ¿Cuál es el diámetro del grafo?
+// En el PDF (se obtuvo con Gephi).
+
+// 14. ¿Cuál es la densidad del grafo?
+// En el PDF (se obtuvo con Gephi).
+
 // 15. ¿Cuántas personas han hablado con un determinado personaje?
 // 16. ¿Cuál es el promedio de conversaciones en una persona?
 // 17. ¿Con cuántas personas habla 'DAENERYS'?
