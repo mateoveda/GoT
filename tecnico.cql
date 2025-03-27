@@ -102,10 +102,38 @@ RETURN COUNT(r) AS Total_relaciones;
 // En el PDF (se obtuvo con Gephi).
 
 // 15. ¿Cuántas personas han hablado con un determinado personaje?
+MATCH (p:Personaje{id:$neodash_personaje_id})-[r:HABLA_CON]->(p2:Personaje)
+RETURN p.id AS ID, 
+    p.name AS Nombre,
+    COLLECT(p2.name) AS Lista_Personas_Habladas;
+
 // 16. ¿Cuál es el promedio de conversaciones en una persona?
-// 17. ¿Con cuántas personas habla 'DAENERYS'?
+MATCH (p:Personaje{id:$neodash_personaje_id_2})-[r:HABLA_CON]->(p2:Personaje)
+RETURN p.id AS ID, 
+    p.name AS Nombre,
+    AVG(r.conversaciones) AS Promedio_Conversaciones;
+
+// 17. ¿Cuántas conversaciones tiene 'DAENERYS'?
+MATCH (p:Personaje{id:'DAENERYS'})-[r:HABLA_CON]->(p2:Personaje)
+RETURN p.id AS ID,
+    p.name AS Personaje,
+    SUM(r.conversaciones) AS Total_conversaciones;
+
 // 18. ¿Cuál es el nodo con mayor número de relaciones?
+MATCH (n)-[r]-(m)
+RETURN n.id AS ID,
+    COUNT(r) AS Total_relaciones
+ORDER BY Total_relaciones DESC
+LIMIT 1;
+
 // 19. ¿Cuántos miembros tiene cada casa?
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH c.id AS ID_Casa,
+    c.name AS Casa,
+    COUNT(p) AS Total_Miembros
+RETURN ID_Casa, Casa, Total_Miembros
+ORDER BY Total_Miembros DESC;
+
 // 20. ¿Cuántas personas no son leales a una casa en Juego de Tronos?
 
 
