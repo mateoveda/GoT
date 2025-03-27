@@ -527,10 +527,81 @@ LIMIT 10;
 // 20. ¿Cuáles son los Personajes con menor PageRank por casa?
 MATCH (c:Casa)<-[:ES_LEAL_A]-(p:Personaje)
 WITH c.name AS Casa, p.name AS Personaje, p.pagerank AS PageRank
-ORDER BY PageRank DESC
+ORDER BY PageRank DESC b
 WITH Casa, COLLECT({Personaje: Personaje, PageRank: PageRank})[0] AS Mejor
 RETURN Casa, Mejor.Personaje AS Personaje, Mejor.PageRank AS PageRank
 ORDER BY PageRank DESC;
+
+
+//APLICACIÓN DE LOS ALGORITMOS DE CENTRALIDAD:
+
+// TRIANGLE COUNT
+// PASO 1:
+CALL gds.graph.project(
+    'myGraphTr',
+    'Personaje',
+    {HABLA_CON: {orientation: 'UNDIRECTED'}}
+);
+
+// PASO 2: veamos que nodos pertenecen a un triangulo
+CALL gds.triangleCount.write('myGraphTr', {
+  writeProperty: 'triangles'
+})
+YIELD globalTriangleCount, nodeCount
+
+// PASO 3: comprobar el atributo triangles
+MATCH (p:Personaje)
+RETURN p.id AS ID,
+    p.triangles as numero_de_triagulos
+ORDER BY numero_de_triagulos DESC;
+
+MATCH (p:Personaje)
+RETURN p.triangles as numero_de_triagulos, count(p.name) as personas_con_ese_numero
+ORDER BY p.triangles
+
+
+// CLUSTERING COEFFICIENT
+
+// PASO 1: subgrafo
+CALL gds.graph.project(
+  'myGraphCC',
+  'Personaje',
+  {HABLA_CON: {orientation: 'UNDIRECTED',
+  }}
+)
+
+
+// PASO 2: escribir atributo
+CALL gds.localClusteringCoefficient.write(
+  'myGraphCC', {
+  writeProperty: 'clusteringCoefficient'
+})
+YIELD nodeCount, nodePropertiesWritten
+
+// PASO 3: comprobar el atributo clusteringCoeficient con el mayor y sus vecinos
+MATCH (p:Personaje)
+ORDER BY p.clusteringCoefficient
+MATCH (p)-[r:HABLA_CON*2]-(v:Personaje)
+RETURN p, r, v
+
+// STRONGLY CONNECTED
+
+
+// WEAKLY CONNECTED COMPONENTS
+
+
+// LABEL PROPAGATION
+
+
+// K-1 COLORING
+
+
+// MODULARITY METRIC
+
+
+// LOUVAIN MODULARITY
+
+
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
@@ -557,5 +628,24 @@ ORDER BY PageRank DESC;
 
 
 //¿Cuáles son aquellas casas que son más propensas a traicionar a otras casas? ¿De qué casa son las personas a las que les llega comunicación de muchas casas?
+
+// ¿Cuáles son los Personajes que tienen un alto Betweenness centrality en cada comunidad en comparación al resto? (Esta pregunta no estamos seguros si tiene tanto sentido)
+// ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse?
+// 
+// Esta pregunta puede ser relevante de responder dado que si hay Personajes críticos que sin ellos las comunidades se romperían o afectarían a nivel
+// ¿Cuáles son las comunidades vecinas de aquellos Personajes con alto PageRank?
+// ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza?
+// 
+// Esta pregunta es interesante de analizar por qué un personaje con la capacidad de unir distintas comunidades tiene potencial para ser el futuro líder de alguna nueva alianza
+// ¿Cuáles son los personajes con menor Degree de cada comunidad de Louvain?
+// ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
+// 
+// Esta pregunta es clave para la dinámica de Juego de Tronos porque es importante conocer la importancia que tiene cierto personaje en la trama de juego de tronos, y cómo la importancia se puede medir con las métricas de los algoritmos de centralidad, entonces es importante tener información de cada personaje individual.
+// ¿Cuáles son las casas que pertenecen a las comunidades generadas con SCC?
+// ¿De qué casas están compuestas las alianzas más fuertes?
+// 
+// Esta pregunta es de vital importancia, porque nos da a entender cómo estarían divididas las casas en caso de que suceda alguna guerra.
+
+
 
 
