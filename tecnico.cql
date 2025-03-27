@@ -336,23 +336,153 @@ ORDER BY fromName ASC, toName ASC;
 
 
 
-
 // PREGUNTAS ANÁLISIS CENTRALIDAD (15 preguntas mínimo):
 // 1. ¿Cuáles son los personajes con mayor Degree en el grafo?
-// 2. ¿Cuáles son los nodos con menor Degree en el grafo?
-// 3. ¿Cuál es la distribución del Degree de los nodos en la red?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado
+ORDER BY Grado DESC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, Grado;
+
+// 2. ¿Cuáles son los Personajes con menor Degree en el grafo?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado
+ORDER BY Grado ASC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, Grado;
+
+// 3. ¿Cuál es la distribución del Degree de los personajes en la red?
+MATCH (p:Personaje)
+WITH p.degree AS Grado, COUNT(p.degree) AS Total_Personajes_Grado
+RETURN Grado, Total_Personajes_Grado
+ORDER BY Grado DESC;
+
 // 4. ¿Cuáles son aquellos personajes con un mayor Closeness Centrality?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.closenessCentrality AS closenessCentrality
+ORDER BY closenessCentrality DESC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, closenessCentrality;
+
 // 5. ¿Cuáles son aquellos personajes con un menor Closeness Centrality?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.closenessCentrality AS closenessCentrality
+ORDER BY closenessCentrality ASC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, closenessCentrality;
+
 // 6. ¿Cuáles son aquellos personajes con un alto Betweenness Centrality?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.betweennessCentrality AS betweennessCentrality
+ORDER BY betweennessCentrality DESC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, betweennessCentrality;
+
 // 7. ¿Cuáles son aquellos personajes con un alto Degree pero que no tienen un alto Betweenness Centrality?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado,
+    p.betweennessCentrality AS betweennessCentrality
+ORDER BY Grado DESC, Nombre ASC
+LIMIT 20
+ORDER BY betweennessCentrality ASC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, Grado, betweennessCentrality;
+
 // 8. ¿Cómo es la distribución del Betweenness centrality?
+MATCH (p:Personaje)
+WITH p.betweennessCentrality AS betweennessCentrality, COUNT(p.betweennessCentrality) AS Total_Personajes_Betweennes
+RETURN betweennessCentrality, Total_Personajes_Betweennes
+ORDER BY betweennessCentrality DESC;
+
 // 9. ¿Cuáles son aquellos personajes con mayor PageRank?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.pagerank AS pageRank
+ORDER BY pageRank DESC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, pageRank;
+
 // 10. ¿Cuáles son aquellos personajes con un bajo Degree pero con un alto PageRank?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado,
+    p.pagerank AS pageRank
+ORDER BY pageRank DESC, Nombre ASC
+LIMIT 20
+ORDER BY Grado ASC, pageRank ASC
+LIMIT 10
+RETURN ID, Nombre, Grado, pageRank;
+
 // 11. ¿Cuáles son aquellos personajes que tienen un alto Degree pero un bajo Page Rank?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado,
+    p.pagerank AS pageRank
+ORDER BY Grado DESC, Nombre ASC
+LIMIT 20
+ORDER BY pageRank ASC, Grado DESC
+LIMIT 10
+RETURN ID, Nombre, Grado, pageRank;
+
 // 12. ¿Cuáles son los personajes con menor PageRank?
+MATCH (p:Personaje)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.pageRank AS pageRank
+ORDER BY pageRank ASC, Nombre ASC
+LIMIT 10
+RETURN ID, Nombre, pageRank;
+
 // 13. Utilizando Articulation Point ¿Cuáles son aquellos personajes cuyo Articulation Point es True?
+MATCH (p:Personaje)-[r:HABLA_CON]-(:Personaje)
+WHERE p.articulationPoint = 1
+WITH p.id AS ID,
+    p.name AS Nombre,
+    COUNT(r) AS Total_Relaciones
+ORDER BY Total_Relaciones DESC
+RETURN ID, Nombre, Total_Relaciones;
+
 // 14. Utilizando Bridge ¿Cuáles son las relaciones frágiles en la red que, si se eliminan, fragmentarían la comunidad? 
+CALL gds.graph.project(
+  'myGraphBridge',
+  'Personaje',
+  {HABLA_CON: {
+      orientation: 'UNDIRECTED'  // Indica que las relaciones no tienen dirección
+    }
+  }
+);
+
+CALL gds.bridges.stream('myGraphBridge')
+YIELD from, to
+RETURN gds.util.asNode(from).name AS fromName, 
+       gds.util.asNode(to).name AS toName
+ORDER BY fromName ASC, toName ASC;
+
 // 15. ¿Cuál es la información de determinado personaje dado su ID?
+MATCH (p:Personaje{id:$neodash_personaje_id_3})
+RETURN p.id AS ID,
+    p.name AS Nombre,
+    p.closenessCentrality AS ClosenessCentrality,
+    p.betweennessCentrality AS BetweennessCentrality,
+    p.pagerank AS pagerank,
+    p.degree AS Degree,
+    p.articulationPoint AS articulationPoint;
+
 // 16. ¿A qué Casa pertenecen los 10 Personajes con mayor Degree?
 // 17. ¿A qué casa pertenecen los 10 personajes con mayor Closeness Centrality?
 // 18. ¿A qué casa pertenecen los 10 personajes con mayor PageRank?
