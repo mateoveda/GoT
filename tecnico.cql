@@ -521,7 +521,8 @@ WITH p.id AS ID,
     c.name AS Casa1,
     c2.name AS Casa2
 ORDER BY betweennessCentrality DESC
-RETURN ID, betweennessCentrality, Casa1, COLLECT(DISTINCT Casa2) AS Casas_Conectadas;
+RETURN ID, betweennessCentrality, Casa1, COLLECT(DISTINCT Casa2) AS Casas_Conectadas
+LIMIT 10;
 
 // 20. ¿Cuáles son los Personajes con menor PageRank por casa?
 MATCH (c:Casa)<-[:ES_LEAL_A]-(p:Personaje)
