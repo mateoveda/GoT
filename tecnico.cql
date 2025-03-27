@@ -273,8 +273,8 @@ CALL gds.pageRank.write(
 )
 YIELD nodePropertiesWritten, ranIterations;
 
-// ARTICULATION POINTS:
 
+// ARTICULATION POINTS:
 // PASO 1: Creamos el subgrafo:
 CALL gds.graph.project(
     'myGraphAP',
@@ -306,8 +306,33 @@ CALL gds.articulationPoints.write(
 )
 YIELD articulationPointCount;
 
-// BRIDGES:
 
+// BRIDGES:
+// PASO 1: Creamos el subgrafo:
+CALL gds.graph.project(
+  'myGraphBridge',
+  'Personaje',
+  {HABLA_CON: {
+      orientation: 'UNDIRECTED'  // Indica que las relaciones no tienen dirección
+    }
+  }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.bridges.stream.estimate(
+    'myGraphBridge', {}
+)
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplico el algoritmo
+CALL gds.bridges.stream('myGraphBridge')
+YIELD from, to
+RETURN gds.util.asNode(from).name AS fromName, 
+       gds.util.asNode(to).name AS toName
+ORDER BY fromName ASC, toName ASC;
+
+// PASO 4: añadir el atributo
+// En este caso el algoritmo Bridges nos señala relaciones que de romperse desconectarían partes de grafo. Por lo tanto no es algo que se guarde en un atributo (capaz sí en el de la relación)
 
 
 
