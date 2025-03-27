@@ -484,8 +484,35 @@ RETURN p.id AS ID,
     p.articulationPoint AS articulationPoint;
 
 // 16. ¿A qué Casa pertenecen los 10 Personajes con mayor Degree?
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.degree AS Grado,
+    c.name AS Casa
+ORDER BY Grado DESC, Nombre ASC
+LIMIT 10
+RETURN COUNT(Casa) AS Total_Casa, Casa;
+
 // 17. ¿A qué casa pertenecen los 10 personajes con mayor Closeness Centrality?
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.closenessCentrality AS ClosenessCentrality,
+    c.name AS Casa
+ORDER BY ClosenessCentrality DESC, Nombre ASC
+LIMIT 10
+RETURN COUNT(Casa) AS Total_Casa, Casa;
+
 // 18. ¿A qué casa pertenecen los 10 personajes con mayor PageRank?
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH p.id AS ID,
+    p.name AS Nombre,
+    p.pagerank AS Pagerank,
+    c.name AS Casa
+ORDER BY Pagerank DESC, Nombre ASC
+LIMIT 10
+RETURN COUNT(Casa) AS Total_Casa, Casa;
+
 // 19. ¿Qué personaje es el que tiene un alto Betweenness centrality entre distintas casas?
 // 20. ¿Cuáles son las casas con personaje con menor PageRank?
 
