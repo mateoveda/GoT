@@ -135,6 +135,181 @@ RETURN ID_Casa, Casa, Total_Miembros
 ORDER BY Total_Miembros DESC;
 
 // 20. ¿Cuántas personas no son leales a una casa en Juego de Tronos?
+MATCH (p:Personaje)
+WHERE NOT EXISTS { (p)-[:ES_LEAL_A]->(:Casa) }
+RETURN COUNT(p) AS Personajes_sin_lealtad;
+
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+RETURN COUNT(r);
+
+
+//APLICACIÓN DE LOS ALGORITMOS DE CENTRALIDAD:
+
+// DEGREE CENTRALITY
+// PASO 1: Creamos el subgrafo
+CALL gds.graph.project(
+    'myGraphDEG',
+    'Personaje',
+    {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED'
+        }
+    }
+);
+
+// Paso 2: Calculo la memoria necesaria:
+CALL gds.degree.write.estimate(
+    'myGraphDEG', {writeProperty: 'degree'})
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo:
+CALL gds.degree.stream(
+    'myGraphDEG'
+)
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).id AS id, gds.util.asNode(nodeId).name AS ciudad_Aeropuerto, score
+ORDER BY score DESC, Aeropuerto ASC;
+
+// Paso 4: Implementamos
+CALL gds.degree.write('myGraphDEG', { writeProperty: 'degree' })
+YIELD centralityDistribution, nodePropertiesWritten
+RETURN centralityDistribution.min AS minimumScore, centralityDistribution.mean AS meanScore,
+centralityDistribution.max AS maxScore, nodePropertiesWritten;
+
+
+// CLOSENESS CENTRALITY
+// PASO 1: Creamos el subgrafo
+CALL gds.graph.project(
+    'myGraphCC',
+    'Personaje',
+    'HABLA_CON'
+);
+
+// PASO 2: calcular la memoria
+CALL gds.degree.write.estimate(
+    'myGraphCC', { writeProperty: 'closenessCentrality' }
+)
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.pageRank.stream(
+    'myGraphCC'
+)
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).Name AS Name, score
+ORDER BY score DESC, Name ASC;
+
+// PASO 4: añadir el atributo
+CALL gds.closeness.write('myGraphCC', {writeProperty: 'closenessCentrality'})
+YIELD centralityDistribution, nodePropertiesWritten
+RETURN centralityDistribution.min AS minimumScore,
+        centralityDistribution.max AS maxScore,
+        centralityDistribution.mean AS meanScore,
+        nodePropertiesWritten;
+
+
+// BETWEENNESS CENTRALITY:
+// PASO 1:
+CALL gds.graph.project(
+    'myGraphBC',
+    'Personaje',
+    'HABLA_CON'
+);
+
+// PASO 2: calcular la memoria
+CALL gds.betweenness.write.estimate(
+    'myGraphBC', {writeProperty: 'betweennessCentrality'})
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.betweenness.stream('myGraphBC')
+YEILD nodeId, score
+RETURN gds.util.asNode(nodeId).Name AS name, score
+ORDER BY score DESC, name ASC;
+
+// PASO 4: Escribimos el resultado como un atributo extra en cada nodo
+CALL gds.betweenness.write('myGraphBC', {writeProperty: "betweennessCentrality"})
+YIELD centralityDistribution, nodePropertiesWritten
+RETURN centralityDistribution.min AS minimunScore,
+        centralityDistribution.mean AS meanScore,
+        centralityDistribution.max AS maxScore,
+        nodePropertiesWritten;
+
+
+// PAGERANK:
+//PASO 1: Creamos el subgrafo:
+CALL gds.graph.project(
+    'myGraphPR',
+    'Personaje',
+    'HABLA_CON'
+);
+
+// PASO 2: calcular la memoria
+// Aca estamos calculando el pageRank
+CALL gds.pageRank.write.estimate(
+    'myGraphPR', {
+        writeProperty: 'pagerank', 
+        maxIterations: 20,
+        dampingFactor: 0.85}
+)
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.pageRank.stream(
+    'myGraphPR'
+)
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).Name AS Name, score
+ORDER BY score DESC, Name ASC;
+
+// PASO 4: añadir el atributo
+CALL gds.pageRank.write(
+    'myGraphPR',
+    {
+        maxIterations: 20,
+        dampingFactor: 0.85,
+        writeProperty: 'pagerank'
+    }
+)
+YIELD nodePropertiesWritten, ranIterations;
+
+// ARTICULATION POINTS:
+
+// PASO 1: Creamos el subgrafo:
+CALL gds.graph.project(
+    'myGraphAP',
+    'Personaje',
+    {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED'
+        }
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.articulationPoints.stream.estimate(
+    'myGraphAP', {writeProperty: 'articulationPoint'})
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.articulationPoints.stream('myGraphAP')
+YEILD nodeId, score
+RETURN gds.util.asNode(nodeId).Name AS name, score
+ORDER BY score DESC, name ASC;
+
+// PASO 4: añadir el atributo (0 ó 1)
+CALL gds.articulationPoints.write(
+    'myGraphAP', 
+    { 
+        writeProperty: 'articulationPoint'
+    }
+)
+YIELD articulationPointCount;
+
+// BRIDGES:
+
+
+
 
 
 // PREGUNTAS ANÁLISIS CENTRALIDAD (15 preguntas mínimo):
@@ -158,6 +333,7 @@ ORDER BY Total_Miembros DESC;
 // 18. ¿A qué casa pertenecen los 10 personajes con mayor PageRank?
 // 19. ¿Qué personaje es el que tiene un alto Betweenness centrality entre distintas casas?
 // 20. ¿Cuáles son las casas con personaje con menor PageRank?
+
 
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
