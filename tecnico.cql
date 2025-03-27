@@ -514,9 +514,22 @@ LIMIT 10
 RETURN COUNT(Casa) AS Total_Casa, Casa;
 
 // 19. ¿Qué personaje es el que tiene un alto Betweenness centrality entre distintas casas?
-// 20. ¿Cuáles son las casas con personaje con menor PageRank?
+MATCH(c:Casa)<-[:ES_LEAL_A]-(p:Personaje)-[:HABLA_CON]-(p2:Personaje)-[:ES_LEAL_A]->(c2:Casa)
+WHERE c.name <> c2.name
+WITH p.id AS ID,
+    p.betweennessCentrality AS betweennessCentrality,
+    c.name AS Casa1,
+    c2.name AS Casa2
+ORDER BY betweennessCentrality DESC
+RETURN ID, betweennessCentrality, Casa1, COLLECT(DISTINCT Casa2) AS Casas_Conectadas;
 
-
+// 20. ¿Cuáles son los Personajes con menor PageRank por casa?
+MATCH (c:Casa)<-[:ES_LEAL_A]-(p:Personaje)
+WITH c.name AS Casa, p.name AS Personaje, p.pagerank AS PageRank
+ORDER BY PageRank DESC
+WITH Casa, COLLECT({Personaje: Personaje, PageRank: PageRank})[0] AS Mejor
+RETURN Casa, Mejor.Personaje AS Personaje, Mejor.PageRank AS PageRank
+ORDER BY PageRank DESC;
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
