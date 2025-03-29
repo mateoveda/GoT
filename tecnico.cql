@@ -543,7 +543,11 @@ ORDER BY PageRank DESC;
 CALL gds.graph.project(
     'myGraphTr',
     'Personaje',
-    {HABLA_CON: {orientation: 'UNDIRECTED'}}
+    {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED'
+        }
+    }
 );
 
 // PASO 2: calcular la memoria
@@ -581,23 +585,39 @@ ORDER BY p.triangles
 CALL gds.graph.project(
   'myGraphCC',
   'Personaje',
-  {HABLA_CON: {orientation: 'UNDIRECTED',
-  }}
-)
+  {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED'
+        }
+    }
+);
 
-
-// PASO 2: escribir atributo
-CALL gds.localClusteringCoefficient.write(
-  'myGraphCC', {
+// PASO 2: calcular la memoria
+CALL gds.localClusteringCoefficient.write.estimate('myGraphCC', {
   writeProperty: 'clusteringCoefficient'
 })
-YIELD nodeCount, nodePropertiesWritten
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
-// PASO 3: comprobar el atributo clusteringCoeficient con el mayor y sus vecinos
+// PASO 3: Aplicamos el algoritmo
+CALL gds.localClusteringCoefficient.stream('myGraphCC')
+YIELD nodeId, clusteringCoefficient
+RETURN gds.util.asNode(nodeId).name AS name, clusteringCoefficient
+ORDER BY clusteringCoefficient DESC, name;
+
+// PASO 4: escribir atributo
+CALL gds.localClusteringCoefficient.write(
+    'myGraphCC', 
+    {
+        writeProperty: 'clusteringCoefficient'
+    }
+)
+YIELD nodeCount, nodePropertiesWritten;
+
+// PASO 5: comprobar el atributo clusteringCoeficient con el mayor y sus vecinos
 MATCH (p:Personaje)
 ORDER BY p.clusteringCoefficient
-MATCH (p)-[r:HABLA_CON*2]-(v:Personaje)
-RETURN p, r, v
+MATCH (p:Personaje)-[r:HABLA_CON]-(v:Personaje)-[r2:HABLA_CON]-(v2:Personaje)
+RETURN p, r, v, r2, v2;
 
 // STRONGLY CONNECTED
 
