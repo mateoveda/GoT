@@ -557,9 +557,9 @@ YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
 CALL gds.triangleCount.stream('myGraphTr')
-YIELD nodeId, triangles
-RETURN gds.util.asNode(nodeId).name AS name, triangles
-ORDER BY triangles DESC, name ASC
+YIELD nodeId, triangleCount
+RETURN gds.util.asNode(nodeId).name AS name, triangleCount
+ORDER BY triangleCount DESC, name ASC
 
 // PASO 4: veamos que nodos pertenecen a un triangulo
 CALL gds.triangleCount.write('myGraphTr', {
@@ -568,18 +568,14 @@ CALL gds.triangleCount.write('myGraphTr', {
 )
 YIELD globalTriangleCount, nodeCount;
 
-// PASO 5: comprobar el atributo triangles
+// PASO 5: comprobar el atributo
 MATCH (p:Personaje)
 RETURN p.id AS ID,
     p.triangles as numero_de_triagulos
 ORDER BY numero_de_triagulos DESC;
 
-MATCH (p:Personaje)
-RETURN p.triangles as numero_de_triagulos, count(p.name) as personas_con_ese_numero
-ORDER BY p.triangles
 
-
-// CLUSTERING COEFFICIENT
+// LOCAL CLUSTERING COEFFICIENT
 
 // PASO 1: subgrafo
 CALL gds.graph.project(
@@ -600,9 +596,9 @@ YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
 CALL gds.localClusteringCoefficient.stream('myGraphCC')
-YIELD nodeId, clusteringCoefficient
-RETURN gds.util.asNode(nodeId).name AS name, clusteringCoefficient
-ORDER BY clusteringCoefficient DESC, name;
+YIELD nodeId, localClusteringCoefficient
+RETURN gds.util.asNode(nodeId).name AS name, localClusteringCoefficient
+ORDER BY localClusteringCoefficient DESC, name;
 
 // PASO 4: escribir atributo
 CALL gds.localClusteringCoefficient.write(
@@ -619,22 +615,292 @@ ORDER BY p.clusteringCoefficient
 MATCH (p:Personaje)-[r:HABLA_CON]-(v:Personaje)-[r2:HABLA_CON]-(v2:Personaje)
 RETURN p, r, v, r2, v2;
 
-// STRONGLY CONNECTED
+
+// STRONGLY CONNECTED COMPONENTS
+// PASO 1: subgrafo
+CALL gds.graph.project(
+  'myGraphSCC',
+  'Personaje',
+  {HABLA_CON:
+        {
+            Properties: 'conversaciones'
+        }
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.scc.write.estimate('myGraphSCC', { writeProperty: 'communitySCC' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.scc.stream('myGraphSCC', {})
+YIELD nodeId, componentId
+RETURN gds.util.asNode(nodeId).name AS Name, componentId AS Component
+ORDER BY Component, Name DESC
+
+// PASO 4: escribir atributo
+CALL gds.scc.write('myGraphSCC', {writeProperty: 'communitySCC'})
+YIELD componentCount, componentDistribution;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.communitySCC as numero_de_SCC,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_SCC DESC;
 
 
 // WEAKLY CONNECTED COMPONENTS
+// PASO 1: subgrafo
+CALL gds.graph.project(
+  'myGraphWCC',
+  'Personaje',
+  {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED',
+            Properties: 'conversaciones'
+        }
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.wcc.write.estimate('myGraphWCC', { writeProperty: 'communityWCC' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.wcc.stream('myGraphWCC')
+YIELD nodeId, componentId
+RETURN gds.util.asNode(nodeId).name AS name, componentId
+ORDER BY componentId, name;
+
+// PASO 4: escribir atributo
+CALL gds.wcc.write('myGraphWCC', {writeProperty: 'communityWCC'})
+YIELD componentCount, componentDistribution;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.communityWCC as numero_de_WCC,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_WCC DESC;
 
 
-// LABEL PROPAGATION
+// LABEL PROPAGATION (General)
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphLP',
+    'Personaje',
+    {HABLA_CON:
+        {
+            Properties: 'conversaciones'
+        }
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.labelPropagation.write.estimate('myGraphLP', { writeProperty: 'labelPropagation' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.labelPropagation.stream('myGraphLP')
+YIELD nodeId, communityId AS Community
+RETURN gds.util.asNode(nodeId).name AS Name, Community
+ORDER BY Community, Name
+
+// PASO 4: escribir atributo
+CALL gds.labelPropagation.write('myGraphLP', {writeProperty: 'labelPropagation'})
+YIELD communityCount, ranIterations, didConverge;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.labelPropagation as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
+
+
+// LABEL PROPAGATION (CERSEI)
+// PASO 0: Añadimos una restricción iniciando con la semilla de CERSEI
+MATCH (p:Personaje)
+WHERE p.id = 'CERSEI'
+SET p.comunidadInicialCERSEI = p.labelPropagation;
+
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphCERSEI',
+    'Personaje',
+    {HABLA_CON:
+        {orientation:'UNDIRECTED'}
+    },
+    {
+        nodeProperties:['comunidadInicialCERSEI']
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.labelPropagation.write.estimate('myGraphCERSEI', { writeProperty: 'labelPropagationCERSEI' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.labelPropagation.stream('myGraphCERSEI')
+YIELD nodeId, communityId AS Community
+RETURN gds.util.asNode(nodeId).name AS Name, Community
+ORDER BY Community, Name;
+
+// PASO 4: escribir atributo
+CALL gds.labelPropagation.write('myGraphCERSEI', {
+    seedProperty: 'comunidadInicialCERSEI',
+    writeProperty: 'labelPropagationCERSEI'
+})
+YIELD communityCount, ranIterations, didConverge;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.labelPropagationCERSEI as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
+
+
+// LABEL PROPAGATION (ROBB)
+// PASO 0: Añadimos una restricción iniciando con la semilla de CERSEI
+MATCH (p:Personaje)
+WHERE p.id = 'ROBB'
+SET p.comunidadInicialROBB = p.labelPropagation;
+
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphROBB',
+    'Personaje',
+    {HABLA_CON:
+        {orientation:'UNDIRECTED'}
+    },
+    {
+        nodeProperties:['comunidadInicialROBB']
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.labelPropagation.write.estimate('myGraphROBB', { writeProperty: 'labelPropagationROBB' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.labelPropagation.stream('myGraphROBB')
+YIELD nodeId, communityId AS Community
+RETURN gds.util.asNode(nodeId).name AS Name, Community
+ORDER BY Community, Name;
+
+// PASO 4: escribir atributo
+CALL gds.labelPropagation.write('myGraphROBB', {
+    seedProperty: 'comunidadInicialROBB',
+    writeProperty: 'labelPropagationROBB'
+})
+YIELD communityCount, ranIterations, didConverge;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.labelPropagationROBB as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
+
+
+// LABEL PROPAGATION (TYWIN)
+// PASO 0: Añadimos una restricción iniciando con la semilla de CERSEI
+MATCH (p:Personaje)
+WHERE p.id = 'TYWIN'
+SET p.comunidadInicialTYWIN = p.labelPropagation;
+
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphTYWIN',
+    'Personaje',
+    {HABLA_CON:
+        {orientation:'UNDIRECTED'}
+    },
+    {
+        nodeProperties:['comunidadInicialTYWIN']
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.labelPropagation.write.estimate('myGraphTYWIN', { writeProperty: 'labelPropagationTYWIN' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.labelPropagation.stream('myGraphTYWIN')
+YIELD nodeId, communityId AS Community
+RETURN gds.util.asNode(nodeId).name AS Name, Community
+ORDER BY Community, Name;
+
+// PASO 4: escribir atributo
+CALL gds.labelPropagation.write('myGraphTYWIN', {
+    seedProperty: 'comunidadInicialTYWIN',
+    writeProperty: 'labelPropagationTYWIN'
+})
+YIELD communityCount, ranIterations, didConverge;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.labelPropagationTYWIN as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
 
 
 // K-1 COLORING
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphK1',
+    'Personaje',
+    {HABLA_CON:
+        {orientation:'UNDIRECTED'}
+    }
+)
+
+// PASO 2: calcular la memoria
+CALL gds.k1coloring.write.estimate('myGraphK1', { writeProperty: 'k1color' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.k1coloring.stream('myGraphK1')
+YIELD nodeId, color
+RETURN gds.util.asNode(nodeId).name AS name, color
+ORDER BY name
+
+// PASO 4: escribir atributo
+CALL gds.k1coloring.write('myGraphK1', {writeProperty:'k1color'})
+YIELD nodeCount, colorCount, ranIterations, didConverge;
+
+// PASO 5: Sumarle +1 al color
+
+// PASO 6: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.k1color as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
 
 
 // MODULARITY METRIC
+// PASO 1: subgrafo
+
+
+// PASO 2: calcular la memoria
+
+
+// PASO 3: Aplicamos el algoritmo
+
+
+// PASO 4: escribir atributo
+
 
 
 // LOUVAIN MODULARITY
+// PASO 1: subgrafo
+
+
+// PASO 2: calcular la memoria
+
+
+// PASO 3: Aplicamos el algoritmo
+
+
+// PASO 4: escribir atributo
+
 
 
 
@@ -646,13 +912,13 @@ RETURN p, r, v, r2, v2;
 // 4.¿Cuáles son los personajes con mayor Clustering Coefficient?
 // 5.¿Qué Personajes tienen un alto Degree pero un bajo Clustering Coefficient?
 // 6.Dar las comunidades SCC
-// 7.Dar las comunidades SCC que no tienen relación con ningún Stark y ningún Lannister
-// 8.¿Qué comunidades existen al aplicar WCC?
-// 9.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
-// 10.¿Cómo queda el grafo si CERSEI es semilla en Label Propagation?
-// 11.¿Cómo queda el grafo si ROBB es semilla en Label Propagation?
-// 12.¿Cómo queda el grafo si TYWIN es semilla en Label Propagation?
-// 13.¿Cuáles son las comunidades que existen con Louvain y quienes son los que las componen?
+// 7.¿Qué comunidades existen al aplicar WCC?
+// 8.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
+// 9.¿Cómo queda el grafo si CERSEI es semilla en Label Propagation?
+// 10.¿Cómo queda el grafo si ROBB es semilla en Label Propagation?
+// 11.¿Cómo queda el grafo si TYWIN es semilla en Label Propagation?
+// 12.¿Cuáles son las comunidades que existen con Louvain y quienes son los que las componen?
+// 13.Dar las comunidades de Louvain que no tienen relación con ningún Stark y ningún Lannister
 // 14.¿Cuáles son los personajes con más Closeness Centrality de cada comunidad de Louvain?
 // 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
 // 16.¿Qué Personajes pertenecientes al último grupo de K1-Coloring hablan con más personas de otras Casas?
