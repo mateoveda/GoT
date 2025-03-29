@@ -533,23 +533,38 @@ RETURN Casa, Mejor.Personaje AS Personaje, Mejor.PageRank AS PageRank
 ORDER BY PageRank DESC;
 
 
+
 //APLICACIÓN DE LOS ALGORITMOS DE CENTRALIDAD:
 
+
+
 // TRIANGLE COUNT
-// PASO 1:
+// PASO 1: Creamos el subgrafo:
 CALL gds.graph.project(
     'myGraphTr',
     'Personaje',
     {HABLA_CON: {orientation: 'UNDIRECTED'}}
 );
 
-// PASO 2: veamos que nodos pertenecen a un triangulo
-CALL gds.triangleCount.write('myGraphTr', {
-  writeProperty: 'triangles'
-})
-YIELD globalTriangleCount, nodeCount
+// PASO 2: calcular la memoria
+CALL gds.triangleCount.write.estimate(
+    'myGraphTr', {writeProperty: 'triangles'})
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
-// PASO 3: comprobar el atributo triangles
+// PASO 3: Aplicamos el algoritmo
+CALL gds.triangleCount.stream('myGraphTr')
+YIELD nodeId, triangles
+RETURN gds.util.asNode(nodeId).name AS name, triangles
+ORDER BY triangles DESC, name ASC
+
+// PASO 4: veamos que nodos pertenecen a un triangulo
+CALL gds.triangleCount.write('myGraphTr', {
+        writeProperty: 'triangles'
+    }
+)
+YIELD globalTriangleCount, nodeCount;
+
+// PASO 5: comprobar el atributo triangles
 MATCH (p:Personaje)
 RETURN p.id AS ID,
     p.triangles as numero_de_triagulos
@@ -605,46 +620,27 @@ RETURN p, r, v
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
-// 1.TC ¿Cuáles son los personajes que pertenecen a una mayor cantidad de tríadas densamente conectadas, lo que indicaría una relación fuerte entre ellos?
-// 2.TC ¿Cuáles son las casas más fuertes y más comunicadas?
-// 3.TC ¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
-// 4.CCoef ¿Cuáles son los personajes que tienen el mayor coeficiente de agrupamiento?
-// 5.(CCoef + D) ¿Cuáles son los personajes que, a pesar de estar en varias conexiones, tienen un bajo coeficiente de agrupamiento, lo que indicaría que sus conexiones no están interconectadas entre sí?
-// 6.SCC ¿Cuántos componentes fuertemente conectados existen en la red y qué casas o facciones representan? ¿Podrían representar alianzas?
-// 7.(SCC + Casas) ¿Cuáles casas no apoyan fuertemente ni a los Stark ni a los Lannister?
-// 8.WCC ¿Cuántos componentes débilmente conectados existen en la red? ¿Podrían indicar futuras alianzas?
-// 9.LP(label Propagation) Si asumimos que los personajes adoptan la lealtad predominante en su entorno inmediato, ¿qué casas o facciones podrían absorber a personajes inicialmente neutrales? ¿Qué alianzas se forman de manera natural en el grafo sin intervención explícita, según la propagación de etiquetas?
-// 10.LP(Seed) ¿Cómo quedarían las alianzas si CERSEI predominara sobre sus Conversaciones?
-// 11.LP(Seed) ¿Cómo quedarían las alianzas si ROBB predomina sobre sus conversaciones?
-// 12.LM ¿Cuáles son las comunidades que existen y quienes son los que las componen?
-// 13.(LM + CC) En base a las comunidades detectadas anteriormente ¿Cuáles son los mejores distribuidores de información por comunidad?
-// 14.(LM + MMetric) ¿Existen personajes cuya lealtad no está clara porque están dentro de comunidades con baja modularidad, lo que sugiere conexiones ambiguas?
-// 15.(MMetric) ¿Qué comunidades parecen ser artificialmente sostenidas por un solo personaje y colapsaría si este fuera eliminado? (usamos Modularity Metric)
-// 16.K1C + LM ¿Qué personajes tienen la mayor cantidad de conexiones con múltiples grupos, actuando como posibles mediadores o traidores de cada posible alianza?
-// 17.(LM + BC) ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse? Esta pregunta trata de identificar comunidades que estén conectadas sin triángulos
-// 18.(PR + LM) ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza? (usamos PageRank primero y luego vemos las comunidades de los nodos con los que se relaciona)
-// 19.(LM + D) ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
-// 20.(LM + Casas) ¿Qué grupos de personajes que no tienen casa pueden ser potenciales aliados de otro grupo?
+// 1.¿Qué personajes pertenecen a la mayor cantidad de triángulos?
+// 2.¿Cuáles son las casas con más cantidad de triángulos en promedio?
+// 3.¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
+// 4.¿Cuáles son los personajes con mayor Clustering Coefficient?
+// 5.¿Qué Personajes tienen un alto Degree pero un bajo Clustering Coefficient?
+// 6.Dar las comunidades SCC
+// 7.Dar las comunidades SCC que no tienen relación con ningún Stark y ningún Lannister
+// 8.¿Qué comunidades existen al aplicar WCC?
+// 9.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
+// 10.¿Cómo queda el grafo si CERSEI es semilla en Label Propagation?
+// 11.¿Cómo queda el grafo si ROBB es semilla en Label Propagation?
+// 12.¿Cómo queda el grafo si TYWIN es semilla en Label Propagation?
+// 13.¿Cuáles son las comunidades que existen con Louvain y quienes son los que las componen?
+// 14.¿Cuáles son los personajes con más Closeness Centrality de cada comunidad de Louvain?
+// 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
+// 16.¿Qué Personajes pertenecientes al último grupo de K1-Coloring hablan con más personas de otras Casas?
+// 17.¿Existen Personajes dentro de alguna comunidad creada con Louvain tal que tengan un alto Betweenness Centrality?
+// 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
+// 19.¿Cuáles son los grupos formados con Louvain que tienen los menores Degrees?
+// 20.¿Qué personajes agrupados con Louvain no pertenecen a una Casa específica?
 
-
-//¿Cuáles son aquellas casas que son más propensas a traicionar a otras casas? ¿De qué casa son las personas a las que les llega comunicación de muchas casas?
-
-// ¿Cuáles son los Personajes que tienen un alto Betweenness centrality en cada comunidad en comparación al resto? (Esta pregunta no estamos seguros si tiene tanto sentido)
-// ¿Existen personajes críticos en las comunidades, tales que al eliminarlos generarían que ciertas comunidades se vieran obligadas a desaparecer o dividirse?
-// 
-// Esta pregunta puede ser relevante de responder dado que si hay Personajes críticos que sin ellos las comunidades se romperían o afectarían a nivel
-// ¿Cuáles son las comunidades vecinas de aquellos Personajes con alto PageRank?
-// ¿Qué personajes son potencialmente aptos para unir dos comunidades distintas para una posible alianza?
-// 
-// Esta pregunta es interesante de analizar por qué un personaje con la capacidad de unir distintas comunidades tiene potencial para ser el futuro líder de alguna nueva alianza
-// ¿Cuáles son los personajes con menor Degree de cada comunidad de Louvain?
-// ¿Quiénes son los personajes más incomunicados de cada comunidad? ¿Por qué personajes habría que empezar a eliminar si quisiéramos estratégicamente dejar debilitada dicha alianza poco a poco?
-// 
-// Esta pregunta es clave para la dinámica de Juego de Tronos porque es importante conocer la importancia que tiene cierto personaje en la trama de juego de tronos, y cómo la importancia se puede medir con las métricas de los algoritmos de centralidad, entonces es importante tener información de cada personaje individual.
-// ¿Cuáles son las casas que pertenecen a las comunidades generadas con SCC?
-// ¿De qué casas están compuestas las alianzas más fuertes?
-// 
-// Esta pregunta es de vital importancia, porque nos da a entender cómo estarían divididas las casas en caso de que suceda alguna guerra.
 
 
 
