@@ -880,15 +880,53 @@ RETURN p.k1color as numero_de_comunidad,
 ORDER BY numero_de_comunidad DESC;
 
 
-// MODULARITY METRIC
+// LOUVAIN MODULARITY
 // PASO 1: subgrafo
 CALL gds.graph.project(
-  'myGraphMMetric',
+  'myGraphLM',
   'Personaje',
   {HABLA_CON:
         {
             orientation: 'UNDIRECTED',
             Properties: 'conversaciones'
+        }
+    }
+);
+
+// PASO 2: calcular la memoria
+CALL gds.louvain.write.estimate('myGraphLM', { writeProperty: 'louvain' })
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
+
+// PASO 3: Aplicamos el algoritmo
+CALL gds.louvain.stream('myGraphLM')
+YIELD nodeId, communityId, intermediateCommunityIds
+RETURN gds.util.asNode(nodeId).name AS name, communityId
+ORDER BY name ASC;
+
+// PASO 4: escribir atributo
+CALL gds.louvain.write('myGraphLM', {writeProperty: 'louvain'})
+YIELD communityCount, modularity, modularities;
+
+// PASO 5: comprobar el atributo
+MATCH (p:Personaje)
+RETURN p.louvain as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
+
+
+// MODULARITY METRIC
+// PASO 1: subgrafo
+CALL gds.graph.project(
+    'myGraphMMetric',
+    {
+        Personaje: {
+            properties: ['louvain']
+        }
+    },
+    {
+        HABLA_CON: {
+            orientation: 'UNDIRECTED',
+            properties: ['conversaciones']
         }
     }
 );
@@ -902,29 +940,15 @@ YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
 CALL gds.modularity.stream('myGraphMMetric', {
-     communityProperty: 'labelPropagation',
+     communityProperty: 'louvain',
      relationshipWeightProperty: 'conversaciones'
 })
 YIELD communityId, modularity
 RETURN communityId, modularity
-ORDER BY communityId ASC
+ORDER BY modularity DESC;
 
 // PASO 4: escribir atributo
 // No se puede dado que es por comunidades, a menos que se haga a mano
-
-
-// LOUVAIN MODULARITY
-// PASO 1: subgrafo
-
-
-// PASO 2: calcular la memoria
-
-
-// PASO 3: Aplicamos el algoritmo
-
-
-// PASO 4: escribir atributo
-
 
 
 
