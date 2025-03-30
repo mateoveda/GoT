@@ -537,7 +537,6 @@ ORDER BY PageRank DESC;
 //APLICACIÓN DE LOS ALGORITMOS DE CENTRALIDAD:
 
 
-
 // TRIANGLE COUNT
 // PASO 1: Creamos el subgrafo:
 CALL gds.graph.project(
@@ -954,10 +953,38 @@ ORDER BY modularity DESC;
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
-// 1.¿Qué personajes pertenecen a la mayor cantidad de triángulos?
+// 1.¿Qué personajes tienen la mayor cantidad de triángulos?
+MATCH (p:Personaje)
+RETURN p.id AS ID,
+    p.triangles as numero_de_triagulos
+ORDER BY numero_de_triagulos DESC
+LIMIT 10;
+
 // 2.¿Cuáles son las casas con más cantidad de triángulos en promedio?
-// 3.¿Cuáles son las triadas que existen en el Grafo? (COLLECT)
+MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)
+WITH c.name AS Casa,
+    AVG(p.triangles) AS Promedio_Triangulos,
+    SUM(p.triangles) AS Cantidad_Triangulos,
+    COUNT(p.name) AS Cantidad_Miembros
+RETURN Casa, Promedio_Triangulos, Cantidad_Triangulos, Cantidad_Miembros
+ORDER BY Promedio_Triangulos DESC
+LIMIT 10;
+
+// 3.¿Qué personajes no tienen triángulos?
+MATCH (p:Personaje)
+WHERE p.triangles = 0
+RETURN p.id AS ID,
+    p.triangles as numero_de_triagulos
+ORDER BY numero_de_triagulos DESC;
+
 // 4.¿Cuáles son los personajes con mayor Clustering Coefficient?
+MATCH (p:Personaje)
+WHERE p.clusteringCoefficient = 1
+RETURN p.id AS ID,
+    p.degree AS Grado,
+    p.clusteringCoefficient AS clusteringCoefficient
+ORDER BY Grado DESC, ID ASC
+
 // 5.¿Qué Personajes tienen un alto Degree pero un bajo Clustering Coefficient?
 // 6.Dar las comunidades SCC
 // 7.¿Qué comunidades existen al aplicar WCC?
