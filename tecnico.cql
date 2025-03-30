@@ -867,6 +867,11 @@ CALL gds.k1coloring.write('myGraphK1', {writeProperty:'k1color'})
 YIELD nodeCount, colorCount, ranIterations, didConverge;
 
 // PASO 5: Sumarle +1 al color
+MATCH (p:Personaje)
+SET p.k1color = p.k1color + 1
+RETURN p.k1color as numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC;
 
 // PASO 6: comprobar el atributo
 MATCH (p:Personaje)
@@ -877,16 +882,35 @@ ORDER BY numero_de_comunidad DESC;
 
 // MODULARITY METRIC
 // PASO 1: subgrafo
-
+CALL gds.graph.project(
+  'myGraphMMetric',
+  'Personaje',
+  {HABLA_CON:
+        {
+            orientation: 'UNDIRECTED',
+            Properties: 'conversaciones'
+        }
+    }
+);
 
 // PASO 2: calcular la memoria
-
+CALL gds.modularity.stats.estimate('myGraphMMetric', {
+     communityProperty: 'labelPropagation',
+     relationshipWeightProperty: 'conversaciones'
+})
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
-
+CALL gds.modularity.stream('myGraphMMetric', {
+     communityProperty: 'labelPropagation',
+     relationshipWeightProperty: 'conversaciones'
+})
+YIELD communityId, modularity
+RETURN communityId, modularity
+ORDER BY communityId ASC
 
 // PASO 4: escribir atributo
-
+// No se puede dado que es por comunidades, a menos que se haga a mano
 
 
 // LOUVAIN MODULARITY
