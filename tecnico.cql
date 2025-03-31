@@ -1015,8 +1015,9 @@ ORDER BY sccSize DESC;
 
 // 7.¿Qué comunidades existen al aplicar WCC?
 MATCH (p:Personaje)
-RETURN p.communityWCC, COUNT(*) AS wccSize
-ORDER BY wccSize DESC;
+RETURN p.communityWCC AS ID_Comunidad_WCC, 
+    COUNT(*) AS magnitud_Comunidad
+ORDER BY magnitud_Comunidad DESC;
 
 // 8.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
 MATCH (p:Personaje)
@@ -1067,13 +1068,13 @@ ORDER BY louvain ASC;
 // 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
 MATCH (p:Personaje)
 WITH MIN(p.modularityMetric) AS MIN_MMetric
-MATCH (p.Personaje)
+MATCH (p:Personaje)
 WITH MIN_MMetric, 
     p.id AS ID,
     p.louvain AS ID_Comunidad,
     p.modularityMetric AS MMetric
-RETURN ID, ID_Comunidad, MMetric
-ORDER BY ID ASC;
+WHERE MMetric = MIN_MMetric
+RETURN ID_Comunidad, MMetric, COLLECT(ID) AS Lista_Personajes;
 
 
 // 16.¿Qué Personajes pertenecen a los últimos grupo de K1-Coloring?
@@ -1115,7 +1116,3 @@ WITH p, collect(follower) as following
 WHERE NONE(f in following WHERE f=p)
 RETURN p.louvain as louvain, COLLECT(p.name) AS personajes
 ORDER BY louvain DESC;
-
-
-
-

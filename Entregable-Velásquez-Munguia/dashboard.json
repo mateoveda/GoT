@@ -1,0 +1,607 @@
+{
+  "title": "GoT-S2",
+  "version": "2.4",
+  "settings": {
+    "pagenumber": 2,
+    "editable": true,
+    "fullscreenEnabled": false,
+    "parameters": {
+      "neodash_personaje_id": "DAVOS",
+      "neodash_personaje_id_display": "DAVOS",
+      "neodash_personaje_id_2": "JON",
+      "neodash_personaje_id_2_display": "JON",
+      "neodash_personaje_id_3": "JON",
+      "neodash_personaje_id_3_display": "JON"
+    },
+    "theme": "light"
+  },
+  "pages": [
+    {
+      "title": "Análisis Básico",
+      "reports": [
+        {
+          "id": "1123f9aa-a657-4d4c-a178-6d385517a23a",
+          "title": "Seleccionar ID (Para Relaciones por ID)",
+          "query": "MATCH (n:`Personaje`) \nWHERE toLower(toString(n.`id`)) CONTAINS toLower($input) \nRETURN DISTINCT n.`id` as value,  n.`id` as display ORDER BY size(toString(value)) ASC LIMIT 5",
+          "width": 6,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Node Property",
+            "entityType": "Personaje",
+            "propertyType": "id",
+            "propertyTypeDisplay": "id",
+            "parameterName": "neodash_personaje_id"
+          },
+          "schema": []
+        },
+        {
+          "id": "9551f52d-4fb4-4757-8656-014067017974",
+          "title": "Relaciones por ID",
+          "query": "MATCH (p:Personaje{id:$neodash_personaje_id})-[r:HABLA_CON]->(p2:Personaje)\nRETURN p.id AS ID, \n    p.name AS Nombre,\n    COLLECT(p2.name) AS Lista;",
+          "width": 18,
+          "height": 4,
+          "x": 6,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "44257d8a-88a3-4fb8-b95d-4220dec24ca4",
+          "title": "Selección ID para (AVG conversaciones)",
+          "query": "MATCH (n:`Personaje`) \nWHERE toLower(toString(n.`id`)) CONTAINS toLower($input) \nRETURN DISTINCT n.`id` as value,  n.`id` as display ORDER BY size(toString(value)) ASC LIMIT 5",
+          "width": 6,
+          "height": 4,
+          "x": 0,
+          "y": 4,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Node Property",
+            "entityType": "Personaje",
+            "propertyType": "id",
+            "propertyTypeDisplay": "id",
+            "parameterName": "neodash_personaje_id_2",
+            "id": "2"
+          },
+          "schema": []
+        },
+        {
+          "id": "c0c37f4e-9a90-4ae5-9066-ffc7647fecc7",
+          "title": "Promedio Conversaciones",
+          "query": "MATCH (p:Personaje{id:$neodash_personaje_id_2})-[r:HABLA_CON]->(p2:Personaje)\nRETURN p.id AS ID, \n    p.name AS Nombre,\n    AVG(r.conversaciones) AS Promedio_Conversaciones;",
+          "width": 6,
+          "height": 4,
+          "x": 6,
+          "y": 4,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": true
+          }
+        }
+      ]
+    },
+    {
+      "title": "Análisis de Centralidad",
+      "reports": [
+        {
+          "id": "a93a71d3-6204-4230-95b8-bea321e65df5",
+          "title": "Personajes con mayor Degree",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado\nORDER BY Grado DESC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, Grado;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "Grado",
+            "key": "(none)"
+          },
+          "settings": {
+            "marginBottom": 60
+          },
+          "schema": []
+        },
+        {
+          "id": "a547dd19-2070-427f-96b5-c71a1601efc7",
+          "title": "Personajes con menor Degree",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado\nORDER BY Grado ASC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, Grado;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 0,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "Grado",
+            "key": "(none)"
+          },
+          "settings": {
+            "marginBottom": 60
+          },
+          "schema": []
+        },
+        {
+          "id": "cd043e0b-e4d2-4974-be9c-483497bd2e5f",
+          "title": "Distribución del Degree de los personajes en la red",
+          "query": "MATCH (p:Personaje)\nWITH p.degree AS Grado, COUNT(p.degree) AS Total_Personajes_Grado\nRETURN Grado, Total_Personajes_Grado\nORDER BY Grado DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 4,
+          "type": "line",
+          "selection": {
+            "x": "Grado",
+            "value": [
+              "Total_Personajes_Grado"
+            ]
+          },
+          "settings": {
+            "fullscreenEnabled": true
+          },
+          "schema": []
+        },
+        {
+          "id": "328f9afe-f21a-45f5-9452-9dc8ea067337",
+          "title": "Personajes con un mayor Closeness Centrality",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.closenessCentrality AS closenessCentrality\nORDER BY closenessCentrality DESC, Nombre ASC\nLIMIT 10\nRETURN ID, closenessCentrality;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 4,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "closenessCentrality",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "3a2f3d6c-23f6-4c37-b7e9-1f5df20955aa",
+          "title": "Personajes con un menor Closeness Centrality",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.closenessCentrality AS closenessCentrality\nORDER BY closenessCentrality ASC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, closenessCentrality;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 8,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "closenessCentrality",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "97eee89e-e3a8-4e27-a6f9-dde2596547c7",
+          "title": "Personajes con un alto Betweenness Centrality",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.betweennessCentrality AS betweennessCentrality\nORDER BY betweennessCentrality DESC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, betweennessCentrality;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 8,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "betweennessCentrality",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "aebfee1c-3560-44e6-826b-165d0c1d24e3",
+          "title": "Personajes con alto Degree pero bajo Betweenness Centrality",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado,\n    p.betweennessCentrality AS betweennessCentrality\nORDER BY Grado DESC, Nombre ASC\nLIMIT 20\nORDER BY betweennessCentrality ASC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, Grado, betweennessCentrality;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 12,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "c025b74e-0b1d-475b-a426-f885be0b67b2",
+          "title": "Distribución del Betweenness Centrality de los personajes en la red",
+          "query": "MATCH (p:Personaje)\nWITH p.betweennessCentrality AS betweennessCentrality, COUNT(p.betweennessCentrality) AS Total_Personajes_Betweennes\nRETURN betweennessCentrality, Total_Personajes_Betweennes\nORDER BY betweennessCentrality DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 12,
+          "type": "line",
+          "selection": {
+            "x": "betweennessCentrality",
+            "value": [
+              "Total_Personajes_Betweennes"
+            ]
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "2e7a532c-d630-4e8a-b83d-50cb49d52ebc",
+          "title": "Personajes con mayor PageRank",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.pagerank AS pageRank\nORDER BY pageRank DESC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, pageRank;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 16,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "pageRank",
+            "key": "(none)"
+          },
+          "settings": {
+            "marginBottom": 60
+          },
+          "schema": []
+        },
+        {
+          "id": "b029032b-d5cd-462b-85b1-35a6eba69d42",
+          "title": "Personajes con bajo Degree pero alto PageRank",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado,\n    p.pagerank AS pageRank\nORDER BY pageRank DESC, Nombre ASC\nLIMIT 20\nORDER BY Grado ASC, pageRank ASC\nLIMIT 10\nRETURN ID, Nombre, Grado, pageRank;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 16,
+          "type": "table",
+          "selection": {},
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "d2584644-83a7-47b7-a6f6-77958d18e638",
+          "title": "Personajes con alto Degree pero bajo PageRank",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado,\n    p.pagerank AS pageRank\nORDER BY Grado DESC, Nombre ASC\nLIMIT 20\nORDER BY pageRank ASC, Grado DESC\nLIMIT 10\nRETURN ID, Nombre, Grado, pageRank;\n\n\n",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 20,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "23c40a6f-929a-4c4b-9469-994234702dd0",
+          "title": "Personajes con menor PageRank",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.pageRank AS pageRank\nORDER BY pageRank ASC, Nombre ASC\nLIMIT 10\nRETURN ID, Nombre, pageRank;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 20,
+          "type": "bar",
+          "selection": {
+            "index": "ID",
+            "value": "pageRank",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "f2594da1-d7d4-412a-9a3e-5850d4796391",
+          "title": "Personajes cuyo Articulation Point es True",
+          "query": "MATCH (p:Personaje)-[r:HABLA_CON]-(:Personaje)\nWHERE p.articulationPoint = 1\nWITH p.id AS ID,\n    p.name AS Nombre,\n    COUNT(r) AS Total_Relaciones\nORDER BY Total_Relaciones DESC\nRETURN ID, Nombre, Total_Relaciones;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 24,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "a43b9c6e-67af-48e4-8a43-a29d66298c51",
+          "title": "Insertar ID reporte personaje",
+          "query": "MATCH (n:`Personaje`) \nWHERE toLower(toString(n.`id`)) CONTAINS toLower($input) \nRETURN DISTINCT n.`id` as value,  n.`id` as display ORDER BY size(toString(value)) ASC LIMIT 5",
+          "width": 6,
+          "height": 4,
+          "x": 12,
+          "y": 24,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Node Property",
+            "entityType": "Personaje",
+            "propertyType": "id",
+            "propertyTypeDisplay": "id",
+            "parameterName": "neodash_personaje_id_3",
+            "id": "3"
+          },
+          "schema": []
+        },
+        {
+          "id": "d35b55c7-ce5c-4925-bc98-1fe1c603d836",
+          "title": "Reporte Personaje",
+          "query": "MATCH (p:Personaje{id:$neodash_personaje_id_3})\nRETURN p.id AS ID,\n    p.name AS Nombre,\n    p.closenessCentrality AS ClosenessCentrality,\n    p.betweennessCentrality AS BetweennessCentrality,\n    p.pagerank AS pagerank,\n    p.degree AS Degree,\n    p.articulationPoint AS articulationPoint;",
+          "width": 6,
+          "height": 4,
+          "x": 18,
+          "y": 24,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": true
+          }
+        },
+        {
+          "id": "78b9e696-9da2-4bf0-b449-004b16ca8a6b",
+          "title": "Casas a las que pertenecen los 10 Personajes con mayor Degree",
+          "query": "MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.degree AS Grado,\n    c.name AS Casa\nORDER BY Grado DESC, Nombre ASC\nLIMIT 10\nRETURN COUNT(Casa) AS Total_Casa, Casa;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 28,
+          "type": "pie",
+          "selection": {
+            "index": "Casa",
+            "value": "Total_Casa",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "41f3da72-523a-4460-9fd2-45e1c6fc4623",
+          "title": "Casas a las que pertenecen los 10 Personajes con mayor Closeness",
+          "query": "MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.closenessCentrality AS ClosenessCentrality,\n    c.name AS Casa\nORDER BY ClosenessCentrality DESC, Nombre ASC\nLIMIT 10\nRETURN COUNT(Casa) AS Total_Casa, Casa;\n\n\n",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 28,
+          "type": "pie",
+          "selection": {
+            "index": "Casa",
+            "value": "Total_Casa",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "3c3674b4-aaf8-4b12-851e-b0aa0c491639",
+          "title": "Casas a las que pertenecen los 10 personajes con mayor PageRank",
+          "query": "MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)\nWITH p.id AS ID,\n    p.name AS Nombre,\n    p.pagerank AS Pagerank,\n    c.name AS Casa\nORDER BY Pagerank DESC, Nombre ASC\nLIMIT 10\nRETURN COUNT(Casa) AS Total_Casa, Casa;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 32,
+          "type": "pie",
+          "selection": {
+            "index": "Casa",
+            "value": "Total_Casa",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "1c311778-7eea-49ff-bb02-0a1569c7549d",
+          "title": "Personaje con un alto Betweenness centrality entre distintas casas",
+          "query": "MATCH(c:Casa)<-[:ES_LEAL_A]-(p:Personaje)-[:HABLA_CON]-(p2:Personaje)-[:ES_LEAL_A]->(c2:Casa)\nWHERE c.name <> c2.name\nWITH p.id AS ID,\n    p.betweennessCentrality AS betweennessCentrality,\n    c.name AS Casa1,\n    c2.name AS Casa2\nORDER BY betweennessCentrality DESC\nRETURN ID, betweennessCentrality, Casa1, COLLECT(DISTINCT Casa2) AS Casas_Conectadas\nLIMIT 10;",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 36,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "0b76933b-36e7-446e-aae7-d6c9cb9b4377",
+          "title": "Personajes con menor PageRank por casa",
+          "query": "MATCH (c:Casa)<-[:ES_LEAL_A]-(p:Personaje)\nWITH c.name AS Casa, p.name AS Personaje, p.pagerank AS PageRank\nORDER BY PageRank DESC\nWITH Casa, COLLECT({Personaje: Personaje, PageRank: PageRank})[0] AS Mejor\nRETURN Casa, Mejor.Personaje AS Personaje, Mejor.PageRank AS PageRank\nORDER BY PageRank DESC;\n\n\n",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 32,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        }
+      ]
+    },
+    {
+      "title": "Análisis de detección de comunidades",
+      "reports": [
+        {
+          "id": "5bd17fd2-86a3-4bd2-a9cf-2acc2e2df886",
+          "title": "Personajes que pertenecen a más triángulos",
+          "query": "MATCH (p:Personaje)\nRETURN p.id AS ID,\n    p.triangles as numero_de_triagulos\nORDER BY numero_de_triagulos DESC\nLIMIT 10;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "40d5a901-f742-4349-a6c7-ab2d2d881d56",
+          "title": "Análisis de Triángulos por Casa.",
+          "query": "MATCH (p:Personaje)-[r:ES_LEAL_A]->(c:Casa)\nWITH c.name AS Casa,\n    AVG(p.triangles) AS Promedio_Triangulos,\n    SUM(p.triangles) AS Cantidad_Triangulos,\n    COUNT(p.name) AS Cantidad_Miembros\nRETURN Casa, Promedio_Triangulos, Cantidad_Triangulos, Cantidad_Miembros\nORDER BY Promedio_Triangulos DESC\nLIMIT 10;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "dded31cd-33ca-467d-af93-5bdaca1e1b6c",
+          "title": "Personajes sin Triángulos",
+          "query": "MATCH (p:Personaje)\nWHERE p.triangles = 0\nRETURN p.id AS ID,\n    p.triangles as numero_de_triagulos\nORDER BY numero_de_triagulos DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 4,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "16837014-b0c0-42a7-b255-390b3018c4a9",
+          "title": "Personajes con mayor Clustering Coefficient",
+          "query": "MATCH (p:Personaje)\nWHERE p.clusteringCoefficient = 1\nRETURN p.id AS ID,\n    p.degree AS Grado,\n    p.clusteringCoefficient AS clusteringCoefficient\nORDER BY Grado DESC, ID ASC;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 4,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "1906daa2-1e40-494d-b6df-e668c92178fd",
+          "title": "Personajes con alto Degree pero bajo Clustering Coefficient",
+          "query": "MATCH (p:Personaje)\nWITH p.id AS ID,\n    p.degree AS Grado,\n    p.clusteringCoefficient AS clusteringCoefficient\nORDER BY Grado DESC, ID ASC\nLIMIT 20\nORDER BY clusteringCoefficient ASC, Grado DESC\nLIMIT 10\nRETURN ID, Grado, clusteringCoefficient;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 8,
+          "type": "table",
+          "selection": {},
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "de87284b-7c9a-4062-9155-5c5539d0b678",
+          "title": "Comunidades SCC con su tamaño",
+          "query": "MATCH (p:Personaje)\nRETURN p.communitySCC, COUNT(*) AS sccSize\nORDER BY sccSize DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 8,
+          "type": "line",
+          "selection": {
+            "x": "p.communitySCC",
+            "value": [
+              "sccSize"
+            ]
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "bec14a39-4b77-460d-8409-8ba70c730f40",
+          "title": "Comunidades WCC con su Relevancia",
+          "query": "MATCH (p:Personaje)\nRETURN p.communityWCC AS ID_Comunidad_WCC, \n    COUNT(*) AS magnitud_Comunidad\nORDER BY magnitud_Comunidad DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 12,
+          "type": "pie",
+          "selection": {
+            "index": "ID_Comunidad_WCC",
+            "value": "magnitud_Comunidad",
+            "key": "(none)"
+          },
+          "settings": {},
+          "schema": []
+        },
+        {
+          "id": "1df75cef-7f82-41f6-a03e-4c1d1aa3db68",
+          "title": "Personajes de la comunidad con menor Modularity Metric",
+          "query": "MATCH (p:Personaje)\nWITH MIN(p.modularityMetric) AS MIN_MMetric\nMATCH (p:Personaje)\nWITH MIN_MMetric, \n    p.id AS ID,\n    p.louvain AS ID_Comunidad,\n    p.modularityMetric AS MMetric\nWHERE MMetric = MIN_MMetric\nRETURN ID_Comunidad, MMetric, COLLECT(ID) AS Lista_Personajes;",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 16,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "58b0da5e-6f56-4ae4-bab4-a90765b8aece",
+          "title": "Personajes con más Closeness Centrality por comunidad",
+          "query": "MATCH (p:Personaje)\nWITH p.louvain AS louvain, \n    p.closenessCentrality AS closeCen,\n    p.degree AS grado,\n    p.name AS name\nORDER BY closeCen DESC, grado DESC\nWITH louvain, collect(closeCen) as centralityList, collect(name) as nameList\nRETURN louvain, nameList[0] as name, centralityList[0] as centralityAttr\nORDER BY louvain ASC;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 12,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "cb289da9-2b34-4431-b5f0-aa88de2835e2",
+          "title": "Posibles Traidores",
+          "query": "MATCH (p:Personaje)\nRETURN p.k1color AS numero_de_comunidad,\n    COLLECT(p.name) AS Miembros\nORDER BY numero_de_comunidad DESC\nLIMIT 5;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 20,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "1bad89ce-b236-489a-8cbe-ee3e968937c7",
+          "title": "Personajes con mayor Betweenness por Comunidad",
+          "query": "MATCH (p:Personaje)\nRETURN p.id AS ID,\n    p.betweennessCentrality AS betweennessCentrality, \n    p.louvain AS louvain\nORDER BY betweennessCentrality DESC \nLIMIT 10;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 20,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "ee2effa5-9fc8-4c9e-b8a1-80a4399352b2",
+          "title": "Personajes con alto PageRank por comunidad",
+          "query": "MATCH (p:Personaje)-[r:HABLA_CON]-(p2:Personaje)\nWITH p.louvain AS louvain, \n     COLLECT(DISTINCT p2.louvain) AS Comunidades_Habladas, \n     MAX(p.pagerank) AS MaxPageRank\nMATCH (p:Personaje)\nWHERE p.pagerank = MaxPageRank AND p.louvain = louvain\nRETURN p.id AS ID, MaxPageRank AS PageRank, louvain, Comunidades_Habladas\nORDER BY PageRank DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 24,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "cbbfe4e1-0f1e-4fc0-8c48-7bcf5920d07f",
+          "title": "Cantidad de Personajes con Degree=1 por comunidad",
+          "query": "MATCH (p:Personaje)\nWITH p.degree as d, p.louvain as louvain, p.id AS ID\nWHERE d = 1\nRETURN louvain, COUNT(d) AS numeroDePersonajesConDegree1, COLLECT(ID) AS Personajes\nORDER BY numeroDePersonajesConDegree1 DESC;",
+          "width": 12,
+          "height": 4,
+          "x": 12,
+          "y": 24,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "a381ad45-1a27-4177-a3ba-9c92de182b7b",
+          "title": "Miembros sin casa por Comunidad",
+          "query": "MATCH (p:Personaje)\nMATCH (follower:Personaje) -[r:ES_LEAL_A*..1]-> (c:Casa)\nWITH p, collect(follower) as following\nWHERE NONE(f in following WHERE f=p)\nRETURN p.louvain as louvain, COLLECT(p.name) AS personajes\nORDER BY louvain DESC;",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 28,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        }
+      ]
+    }
+  ],
+  "parameters": {},
+  "extensions": {
+    "active": true,
+    "activeReducers": []
+  },
+  "uuid": "37fdac5c-124a-4b40-aa8a-59949b28f42e"
+}
