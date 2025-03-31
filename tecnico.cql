@@ -997,10 +997,14 @@ ORDER BY Grado DESC, ID ASC;
 
 // 5.¿Qué Personajes tienen un alto Degree pero un bajo Clustering Coefficient?
 MATCH (p:Personaje)
-WITH p.degree as degree, p.clusteringCoefficient as clusteringCoefficient, 
-p.name as name, p.degree/p.clusteringCoefficient as ratio
-RETURN name, degree, clusteringCoefficient
-ORDER BY ratio DESC;
+WITH p.id AS ID,
+    p.degree AS Grado,
+    p.clusteringCoefficient AS clusteringCoefficient
+ORDER BY Grado DESC, ID ASC
+LIMIT 20
+ORDER BY clusteringCoefficient ASC, Grado DESC
+LIMIT 10
+RETURN ID, Grado, clusteringCoefficient;
 
 // 6.Dar las comunidades SCC
 MATCH (p:Personaje)
@@ -1014,8 +1018,10 @@ ORDER BY wccSize DESC;
 
 // 8.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
 MATCH (p:Personaje)
-RETURN p.labelPropagation, COUNT(*) AS lpSize, COLLECT(p.name)
-ORDER BY lpSize DESC;
+RETURN p.labelPropagation AS Comunidad, 
+    COUNT(p) AS Cantidad_Miembros, 
+    COLLECT(p.name) AS Miembros
+ORDER BY Cantidad_Miembros DESC;
 
 // 9.¿Cómo queda el grafo si CERSEI es semilla en Label Propagation?
 MATCH (p:Personaje)
@@ -1060,17 +1066,44 @@ UNWIND listOfPersonajes[0] AS pers
 RETURN pers;
 
 // 16.¿Qué Personajes pertenecientes al tercer grupo de K1-Coloring hablan con más personas de otras Casas?
-MATCH (p:Personajes)
+MATCH (p:Personaje)
 WITH p.k1color as k1, collect(p) as k1group
 ORDER BY k1
 WITH collect(k1group)[2] as personas
-ORDER BY 
+UNWIND personas as p
+MATCH (p) -[l:ES_LEAL_A]-> (c:Casa)
+MATCH (p) -[h:HABLA_CON]-> (v:Personaje)
+MATCH (v) -[l2:ES_LEAL_A]-> (casaVecina:Casa)
+WHERE p <> v AND c <> casaVecina
+RETURN p.name as name, count(h) as numberOfFriendOfDifferentHouses, p.k1color as k1Color
+ORDER BY numberOfFriendOfDifferentHouses DESC LIMIT 3;
 
 // 17.¿Existen Personajes dentro de alguna comunidad creada con Louvain tal que tengan un alto Betweenness Centrality?
-// 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
-// 19.¿Cuáles son los grupos formados con Louvain que tienen los menores Degrees?
-// 20.¿Qué personajes agrupados con Louvain no pertenecen a una Casa específica?
+MATCH (p:Personaje)
+RETURN p.betweennessCentrality as bc, p.louvain
+ORDER BY p.betweennessCentrality DESC LIMIT 15
 
+// 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
+MATCH (p:Personaje)
+WITH p.betweennessCentrality as bc, p.louvain as louvain
+ORDER BY bc DESC LIMIT 5
+RETURN louvain, COLLECT(bc)
+ORDER BY louvain DESC;
+
+// 19.¿Cuáles son los grupos formados con Louvain que tienen los menores Degrees?
+MATCH (p:Personaje)
+WITH p.degree as d, p.louvain as louvain
+WHERE d = 1
+RETURN louvain, COUNT(d) AS numeroDePersonajesConDegree1
+ORDER BY louvain DESC;
+
+// 20.¿Qué personajes agrupados con Louvain no pertenecen a una Casa específica?
+MATCH (p:Personaje)
+MATCH (follower:Personaje) -[r:ES_LEAL_A*..1]-> (c:Casa)
+WITH p, collect(follower) as following
+WHERE NONE(f in following WHERE f=p)
+RETURN p.louvain as louvain, COLLECT(p.name) AS personajes
+ORDER BY louvain DESC;
 
 
 
