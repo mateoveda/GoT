@@ -959,7 +959,9 @@ SET p.modularityMetric = modularity;
 
 // PASO 5: comprobamos
 MATCH (p:Personaje)
-RETURN p.modularityMetric, COUNT(*);
+RETURN p.modularityMetric AS MMetric, 
+    COUNT(p) AS Cantidad_Miembros
+ORDER BY MMetric;
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
@@ -1044,18 +1046,23 @@ RETURN p.louvain, COUNT(*) AS lSize, COLLECT(p.name)
 ORDER BY lSize DESC;
 
 // 13.Dar las comunidades de Louvain que no tienen relación con ningún Stark y ningún Lannister
-MATCH (p:Personaje)-[:ES_LEAL_A]->(c:Casa)
-WITH p.louvain as louvain, COLLECT(DISTINCT p.name) AS personajes, COLLECT(DISTINCT c.name) AS casas
+MATCH (o:Personaje)-[:HABLA_CON]-(p:Personaje)-[:ES_LEAL_A]->(c:Casa)
+WITH o.louvain as louvain_Comunidad, 
+    COLLECT(DISTINCT o.name) AS personajes, 
+    COLLECT(DISTINCT c.name) AS casas
 WHERE NONE(casa IN casas WHERE casa = "Stark" OR casa = "Lannister")   
-RETURN louvain, personajes, casas;
+RETURN louvain_Comunidad, personajes;
 
 // 14.¿Cuáles son los personajes con más Closeness Centrality de cada comunidad de Louvain?
 MATCH (p:Personaje)
-WITH p.louvain as louvain, p.closenessCentrality as closeCen, p.name as name
-ORDER BY closeCen DESC
+WITH p.louvain AS louvain, 
+    p.closenessCentrality AS closeCen,
+    p.degree AS grado,
+    p.name AS name
+ORDER BY closeCen DESC, grado DESC
 WITH louvain, collect(closeCen) as centralityList, collect(name) as nameList
 RETURN louvain, nameList[0] as name, centralityList[0] as centralityAttr
-ORDER BY louvain ASC
+ORDER BY louvain ASC;
 
 // 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
 MATCH (p:Personaje)
@@ -1065,37 +1072,48 @@ WITH collect(personajes) as listOfPersonajes
 UNWIND listOfPersonajes[0] AS pers
 RETURN pers;
 
-// 16.¿Qué Personajes pertenecientes al tercer grupo de K1-Coloring hablan con más personas de otras Casas?
 MATCH (p:Personaje)
-WITH p.k1color as k1, collect(p) as k1group
-ORDER BY k1
-WITH collect(k1group)[2] as personas
-UNWIND personas as p
-MATCH (p) -[l:ES_LEAL_A]-> (c:Casa)
-MATCH (p) -[h:HABLA_CON]-> (v:Personaje)
-MATCH (v) -[l2:ES_LEAL_A]-> (casaVecina:Casa)
-WHERE p <> v AND c <> casaVecina
-RETURN p.name as name, count(h) as numberOfFriendOfDifferentHouses, p.k1color as k1Color
-ORDER BY numberOfFriendOfDifferentHouses DESC LIMIT 3;
+WITH MIN(p.modularityMetric) AS MIN_MMetric
+MATCH (p.Personaje)
+WITH MIN_MMetric, 
+    p.id AS ID,
+    p.louvain AS ID_Comunidad,
+    p.modularityMetric AS MMetric
+RETURN ID, ID_Comunidad, MMetric
+ORDER BY ID ASC;
+
+
+// 16.¿Qué Personajes pertenecen a los últimos grupo de K1-Coloring?
+MATCH (p:Personaje)
+RETURN p.k1color AS numero_de_comunidad,
+    COLLECT(p.name) AS Miembros
+ORDER BY numero_de_comunidad DESC
+LIMIT 5;
 
 // 17.¿Existen Personajes dentro de alguna comunidad creada con Louvain tal que tengan un alto Betweenness Centrality?
 MATCH (p:Personaje)
-RETURN p.betweennessCentrality as bc, p.louvain
-ORDER BY p.betweennessCentrality DESC LIMIT 15
+RETURN p.id AS ID,
+    p.betweennessCentrality AS betweennessCentrality, 
+    p.louvain AS louvain
+ORDER BY betweennessCentrality DESC 
+LIMIT 10;
 
 // 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
-MATCH (p:Personaje)
-WITH p.betweennessCentrality as bc, p.louvain as louvain
-ORDER BY bc DESC LIMIT 5
-RETURN louvain, COLLECT(bc)
-ORDER BY louvain DESC;
+MATCH (p:Personaje)-[r:HABLA_CON]-(p2:Personaje)
+WHERE p.louvain <> p2.louvain
+WITH p.id AS ID,
+    p.betweennessCentrality as betweennessCentrality,
+    p.louvain as louvain,
+    COLLECT(DISTINCT p2.louvain) AS Comunidades_Habladas
+RETURN ID, betweennessCentrality, louvain,Comunidades_Habladas
+ORDER BY betweennessCentrality DESC LIMIT 10;
 
-// 19.¿Cuáles son los grupos formados con Louvain que tienen los menores Degrees?
+// 19.¿Cuáles son los grupos formados con Louvain que tienen los personajes con menores Degrees?
 MATCH (p:Personaje)
-WITH p.degree as d, p.louvain as louvain
+WITH p.degree as d, p.louvain as louvain, p.id AS ID
 WHERE d = 1
-RETURN louvain, COUNT(d) AS numeroDePersonajesConDegree1
-ORDER BY louvain DESC;
+RETURN louvain, COUNT(d) AS numeroDePersonajesConDegree1, COLLECT(ID) AS Personajes
+ORDER BY numeroDePersonajesConDegree1 DESC;
 
 // 20.¿Qué personajes agrupados con Louvain no pertenecen a una Casa específica?
 MATCH (p:Personaje)
