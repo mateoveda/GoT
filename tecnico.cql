@@ -45,13 +45,13 @@ RETURN p,r,c;
 // PREGUNTAS ANÁLISIS BÁSICO (15 preguntas mínimo):
 
 // 1. ¿Cómo es el esquema general del grafo?
-CALL db.schema.visualization
+CALL db.schema.visualization;
 
 // 2. ¿Cuáles tipos de nodos existen y que atributos tienen?
-CALL db.schema.nodeTypeProperties
+CALL db.schema.nodeTypeProperties;
 
 // 3. ¿Cuáles tipos de relaciones existen y que atributos tienen?
-CALL db.schema.relTypeProperties
+CALL db.schema.relTypeProperties;
 
 // 4. ¿Cuántos Personajes existen?
 MATCH (p:Personaje)
@@ -474,7 +474,7 @@ RETURN gds.util.asNode(from).name AS fromName,
 ORDER BY fromName ASC, toName ASC;
 
 // 15. ¿Cuál es la información de determinado personaje dado su ID?
-MATCH (p:Personaje{id:$neodash_personaje_id_3})
+MATCH (p:Personaje{id:3})
 RETURN p.id AS ID,
     p.name AS Nombre,
     p.closenessCentrality AS ClosenessCentrality,
@@ -527,7 +527,7 @@ LIMIT 10;
 // 20. ¿Cuáles son los Personajes con menor PageRank por casa?
 MATCH (c:Casa)<-[:ES_LEAL_A]-(p:Personaje)
 WITH c.name AS Casa, p.name AS Personaje, p.pagerank AS PageRank
-ORDER BY PageRank DESC b
+ORDER BY PageRank DESC
 WITH Casa, COLLECT({Personaje: Personaje, PageRank: PageRank})[0] AS Mejor
 RETURN Casa, Mejor.Personaje AS Personaje, Mejor.PageRank AS PageRank
 ORDER BY PageRank DESC;
@@ -558,7 +558,7 @@ YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 CALL gds.triangleCount.stream('myGraphTr')
 YIELD nodeId, triangleCount
 RETURN gds.util.asNode(nodeId).name AS name, triangleCount
-ORDER BY triangleCount DESC, name ASC
+ORDER BY triangleCount DESC, name ASC;
 
 // PASO 4: veamos que nodos pertenecen a un triangulo
 CALL gds.triangleCount.write('myGraphTr', {
@@ -629,13 +629,13 @@ CALL gds.graph.project(
 
 // PASO 2: calcular la memoria
 CALL gds.scc.write.estimate('myGraphSCC', { writeProperty: 'communitySCC' })
-YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
 CALL gds.scc.stream('myGraphSCC', {})
 YIELD nodeId, componentId
 RETURN gds.util.asNode(nodeId).name AS Name, componentId AS Component
-ORDER BY Component, Name DESC
+ORDER BY Component, Name DESC;
 
 // PASO 4: escribir atributo
 CALL gds.scc.write('myGraphSCC', {writeProperty: 'communitySCC'})
@@ -696,13 +696,13 @@ CALL gds.graph.project(
 
 // PASO 2: calcular la memoria
 CALL gds.labelPropagation.write.estimate('myGraphLP', { writeProperty: 'labelPropagation' })
-YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory
+YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 
 // PASO 3: Aplicamos el algoritmo
 CALL gds.labelPropagation.stream('myGraphLP')
 YIELD nodeId, communityId AS Community
 RETURN gds.util.asNode(nodeId).name AS Name, Community
-ORDER BY Community, Name
+ORDER BY Community, Name;
 
 // PASO 4: escribir atributo
 CALL gds.labelPropagation.write('myGraphLP', {writeProperty: 'labelPropagation'})
@@ -849,7 +849,7 @@ CALL gds.graph.project(
     {HABLA_CON:
         {orientation:'UNDIRECTED'}
     }
-)
+);
 
 // PASO 2: calcular la memoria
 CALL gds.k1coloring.write.estimate('myGraphK1', { writeProperty: 'k1color' })
@@ -859,7 +859,7 @@ YIELD nodeCount, relationshipCount, bytesMin, bytesMax, requiredMemory;
 CALL gds.k1coloring.stream('myGraphK1')
 YIELD nodeId, color
 RETURN gds.util.asNode(nodeId).name AS name, color
-ORDER BY name
+ORDER BY name;
 
 // PASO 4: escribir atributo
 CALL gds.k1coloring.write('myGraphK1', {writeProperty:'k1color'})
@@ -947,9 +947,19 @@ RETURN communityId, modularity
 ORDER BY modularity DESC;
 
 // PASO 4: escribir atributo
-// No se puede dado que es por comunidades, a menos que se haga a mano
+CALL gds.modularity.stream('myGraphMMetric', {
+     communityProperty: 'louvain',
+     relationshipWeightProperty: 'conversaciones'
+})
+YIELD communityId, modularity
 
+MATCH (p:Personaje)
+WHERE p.louvain = communityId
+SET p.modularityMetric = modularity;
 
+// PASO 5: comprobamos
+MATCH (p:Personaje)
+RETURN p.modularityMetric, COUNT(*);
 
 // PREGUNTAS ANÁLISIS DE COMUNIDAD:
 
@@ -983,20 +993,79 @@ WHERE p.clusteringCoefficient = 1
 RETURN p.id AS ID,
     p.degree AS Grado,
     p.clusteringCoefficient AS clusteringCoefficient
-ORDER BY Grado DESC, ID ASC
+ORDER BY Grado DESC, ID ASC;
 
 // 5.¿Qué Personajes tienen un alto Degree pero un bajo Clustering Coefficient?
+MATCH (p:Personaje)
+WITH p.degree as degree, p.clusteringCoefficient as clusteringCoefficient, 
+p.name as name, p.degree/p.clusteringCoefficient as ratio
+RETURN name, degree, clusteringCoefficient
+ORDER BY ratio DESC;
+
 // 6.Dar las comunidades SCC
+MATCH (p:Personaje)
+RETURN p.communitySCC, COUNT(*) AS sccSize
+ORDER BY sccSize DESC;
+
 // 7.¿Qué comunidades existen al aplicar WCC?
+MATCH (p:Personaje)
+RETURN p.communityWCC, COUNT(*) AS wccSize
+ORDER BY wccSize DESC;
+
 // 8.¿Cómo son las comunidades del Label Propagation sin semillas específicas?
+MATCH (p:Personaje)
+RETURN p.labelPropagation, COUNT(*) AS lpSize, COLLECT(p.name)
+ORDER BY lpSize DESC;
+
 // 9.¿Cómo queda el grafo si CERSEI es semilla en Label Propagation?
+MATCH (p:Personaje)
+RETURN p.labelPropagationCERSEI, COUNT(*) AS lpcSize, COLLECT(p.name)
+ORDER BY lpcSize DESC;
+
 // 10.¿Cómo queda el grafo si ROBB es semilla en Label Propagation?
+MATCH (p:Personaje)
+RETURN p.labelPropagationROBB, COUNT(*) AS lprSize, COLLECT(p.name)
+ORDER BY lprSize DESC;
+
 // 11.¿Cómo queda el grafo si TYWIN es semilla en Label Propagation?
+MATCH (p:Personaje)
+RETURN p.labelPropagationTYWIN, COUNT(*) AS lptSize, COLLECT(p.name)
+ORDER BY lptSize DESC;
+
 // 12.¿Cuáles son las comunidades que existen con Louvain y quienes son los que las componen?
+MATCH (p:Personaje) 
+RETURN p.louvain, COUNT(*) AS lSize, COLLECT(p.name)
+ORDER BY lSize DESC;
+
 // 13.Dar las comunidades de Louvain que no tienen relación con ningún Stark y ningún Lannister
+MATCH (p:Personaje)-[:ES_LEAL_A]->(c:Casa)
+WITH p.louvain as louvain, COLLECT(DISTINCT p.name) AS personajes, COLLECT(DISTINCT c.name) AS casas
+WHERE NONE(casa IN casas WHERE casa = "Stark" OR casa = "Lannister")   
+RETURN louvain, personajes, casas;
+
 // 14.¿Cuáles son los personajes con más Closeness Centrality de cada comunidad de Louvain?
+MATCH (p:Personaje)
+WITH p.louvain as louvain, p.closenessCentrality as closeCen, p.name as name
+ORDER BY closeCen DESC
+WITH louvain, collect(closeCen) as centralityList, collect(name) as nameList
+RETURN louvain, nameList[0] as name, centralityList[0] as centralityAttr
+ORDER BY louvain ASC
+
 // 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
-// 16.¿Qué Personajes pertenecientes al último grupo de K1-Coloring hablan con más personas de otras Casas?
+MATCH (p:Personaje)
+WITH p.modularityMetric as modularityMetric, collect(p.name) as personajes
+ORDER BY modularityMetric DESC
+WITH collect(personajes) as listOfPersonajes
+UNWIND listOfPersonajes[0] AS pers
+RETURN pers;
+
+// 16.¿Qué Personajes pertenecientes al tercer grupo de K1-Coloring hablan con más personas de otras Casas?
+MATCH (p:Personajes)
+WITH p.k1color as k1, collect(p) as k1group
+ORDER BY k1
+WITH collect(k1group)[2] as personas
+ORDER BY 
+
 // 17.¿Existen Personajes dentro de alguna comunidad creada con Louvain tal que tengan un alto Betweenness Centrality?
 // 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
 // 19.¿Cuáles son los grupos formados con Louvain que tienen los menores Degrees?
