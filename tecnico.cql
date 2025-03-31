@@ -1066,13 +1066,6 @@ ORDER BY louvain ASC;
 
 // 15.Aplicando Metric Modularity ¿Qué comunidades tienen el menor Metric Modularity? y ¿Qué Personajes pertenecen a esas comunidades?
 MATCH (p:Personaje)
-WITH p.modularityMetric as modularityMetric, collect(p.name) as personajes
-ORDER BY modularityMetric DESC
-WITH collect(personajes) as listOfPersonajes
-UNWIND listOfPersonajes[0] AS pers
-RETURN pers;
-
-MATCH (p:Personaje)
 WITH MIN(p.modularityMetric) AS MIN_MMetric
 MATCH (p.Personaje)
 WITH MIN_MMetric, 
@@ -1100,13 +1093,13 @@ LIMIT 10;
 
 // 18.Aplicando Louvain ¿Qué personajes con alto PageRank HABLA_CON otros personajes de distintas comunidades a la propia?
 MATCH (p:Personaje)-[r:HABLA_CON]-(p2:Personaje)
-WHERE p.louvain <> p2.louvain
-WITH p.id AS ID,
-    p.betweennessCentrality as betweennessCentrality,
-    p.louvain as louvain,
-    COLLECT(DISTINCT p2.louvain) AS Comunidades_Habladas
-RETURN ID, betweennessCentrality, louvain,Comunidades_Habladas
-ORDER BY betweennessCentrality DESC LIMIT 10;
+WITH p.louvain AS louvain, 
+     COLLECT(DISTINCT p2.louvain) AS Comunidades_Habladas, 
+     MAX(p.pagerank) AS MaxPageRank
+MATCH (p:Personaje)
+WHERE p.pagerank = MaxPageRank AND p.louvain = louvain
+RETURN p.id AS ID, MaxPageRank AS PageRank, louvain, Comunidades_Habladas
+ORDER BY PageRank DESC;
 
 // 19.¿Cuáles son los grupos formados con Louvain que tienen los personajes con menores Degrees?
 MATCH (p:Personaje)
